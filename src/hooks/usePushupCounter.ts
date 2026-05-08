@@ -2,6 +2,19 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { SensorMode, RhythmQuality } from '@/types'
 
+// Type declaration for Device Proximity Event
+declare global {
+  interface DeviceProximityEvent extends Event {
+    value: number // distance in cm
+    min: number
+    max: number
+  }
+
+  interface WindowEventMap {
+    deviceproximity: DeviceProximityEvent
+  }
+}
+
 interface UsePushupCounterOptions {
   mode: SensorMode
   active: boolean
@@ -13,6 +26,7 @@ interface CounterState {
   rhythmQuality: RhythmQuality
   sensorReady: boolean
   accelerometerPermission: 'unknown' | 'granted' | 'denied' | 'unavailable'
+  proximityPermission: 'unknown' | 'granted' | 'denied' | 'unavailable'
 }
 
 const MIN_REP_INTERVAL_MS = 400
@@ -32,12 +46,19 @@ const ACC_THRESHOLD = 3.0     // deviation from baseline to trigger state change
 const BRIGHTNESS_HISTORY = 8
 const BRIGHTNESS_THRESHOLD = 15  // brightness change to register a peak
 
+// ─── Proximity sensor ──────────────────────────────────────────────────────
+// Proximity sensor detects when user is close to/far from the screen.
+// During push-up: close (down position) → far (up position).
+const PROXIMITY_CLOSE_THRESHOLD = 5   // cm, close threshold
+const PROXIMITY_FAR_THRESHOLD = 20    // cm, far threshold
+
 export function usePushupCounter({ mode, active, onRep }: UsePushupCounterOptions) {
   const [state, setState] = useState<CounterState>({
     count: 0,
     rhythmQuality: 'idle',
     sensorReady: false,
     accelerometerPermission: 'unknown',
+    proximityPermission: 'unknown',
   })
 
   const countRef        = useRef(0)
@@ -53,6 +74,7 @@ export function usePushupCounter({ mode, active, onRep }: UsePushupCounterOption
   const brightnessHist  = useRef<number[]>([])
   const brightPeak      = useRef<'high' | 'low'>('low')
   const animFrame       = useRef<number>(0)
+  const proximityState  = useRef<'close' | 'far'>('far')
 
   const addRep = useCallback(() => {
     const now = Date.now()
@@ -222,11 +244,54 @@ export function usePushupCounter({ mode, active, onRep }: UsePushupCounterOption
     }
   }, [mode, active])
 
+  // ── Proximity mode ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (mode !== 'proximity' || !active) return
+
+    let mounted = true
+
+    const handleProximity = (e: DeviceProximityEvent) => {
+      if (!mounted) return
+
+      const distance = e.value // distance in cm
+
+      if (proximityState.current === 'far' && distance <= PROXIMITY_CLOSE_THRESHOLD) {
+        proximityState.current = 'close'
+      } else if (proximityState.current === 'close' && distance >= PROXIMITY_FAR_THRESHOLD) {
+        proximityState.current = 'far'
+        addRep()
+      }
+    }
+
+    const startProximity = async () => {
+      if (!('ondeviceproximity' in window) && !('deviceproximity' in window)) {
+        setState(s => ({ ...s, proximityPermission: 'unavailable' }))
+        return
+      }
+
+      // Check if permission is needed (some browsers may require it)
+      try {
+        // Try to access proximity sensor
+        window.addEventListener('deviceproximity', handleProximity)
+        setState(s => ({ ...s, proximityPermission: 'granted', sensorReady: true }))
+      } catch {
+        setState(s => ({ ...s, proximityPermission: 'denied' }))
+      }
+    }
+
+    startProximity()
+    return () => {
+      mounted = false
+      window.removeEventListener('deviceproximity', handleProximity)
+    }
+  }, [mode, active, addRep])
+
   return {
     count: state.count,
     rhythmQuality: state.rhythmQuality,
     sensorReady: state.sensorReady,
     accelerometerPermission: state.accelerometerPermission,
+    proximityPermission: state.proximityPermission,
     addRep,
     reset,
   }
@@ -250,4 +315,11 @@ export async function requestAccelerometerPermission(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function requestProximityPermission(): Promise<boolean> {
+  if (!('ondeviceproximity' in window) && !('deviceproximity' in window)) return false
+  // Proximity sensor usually doesn't require explicit permission
+  // but we can check if the event is available
+  return true
 }

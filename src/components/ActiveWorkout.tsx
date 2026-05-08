@@ -64,15 +64,15 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
     return () => clearInterval(totalTimer.current)
   }, [])
 
-  // Calculate button size for 70% screen area
+  // Calculate button size for 90% screen area
   useEffect(() => {
     const calculateButtonSize = () => {
       const width = window.innerWidth
       const height = window.innerHeight
       const screenArea = width * height
-      const buttonArea = 0.7 * screenArea
+      const buttonArea = 0.9 * screenArea
       const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.9, height * 0.9))) // cap at 90% to leave some margin
+      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
     }
     calculateButtonSize()
     window.addEventListener('resize', calculateButtonSize)
@@ -217,7 +217,9 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
               <div className="flex items-center gap-2 bg-brand-50 rounded-full px-4 py-1.5">
                 <Zap size={14} className="text-brand-500" />
                 <span className="text-xs text-brand-700 font-medium">
-                  {sensorMode === 'accelerometer' ? 'Capteur actif' : 'Caméra active'}
+                  {sensorMode === 'accelerometer' ? 'Capteur actif' : 
+                   sensorMode === 'camera' ? 'Caméra active' :
+                   'Proximité active'}
                 </span>
               </div>
             )}

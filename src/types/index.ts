@@ -1,5 +1,5 @@
 export type Level = 'beginner' | 'intermediate' | 'advanced' | 'elite'
-export type SensorMode = 'accelerometer' | 'camera' | 'tap'
+export type SensorMode = 'accelerometer' | 'camera' | 'tap' | 'proximity'
 export type RhythmQuality = 'fast' | 'good' | 'slow' | 'idle'
 export type WorkoutPhase = 'preparing' | 'active' | 'resting' | 'completed' | 'paused'
 

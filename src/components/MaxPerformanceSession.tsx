@@ -22,6 +22,7 @@ const MODE_LABELS: Record<SensorMode, string> = {
   tap:           'Tap manuel',
   accelerometer: 'Capteur de mouvement',
   camera:        'Caméra frontale',
+  proximity:     'Capteur de proximité',
 }
 
 export function MaxPerformanceSession({
@@ -32,6 +33,7 @@ export function MaxPerformanceSession({
   const [pulseKey, setPulseKey] = useState(0)
   const [displayCount, setDisplayCount] = useState(0)
   const [isNewRecord, setIsNewRecord]   = useState(false)
+  const [buttonSize, setButtonSize] = useState(240) // default 240px
   const startTime = useRef(0)
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const { vibrateRep, vibrateComplete } = useVibration()
@@ -56,6 +58,21 @@ export function MaxPerformanceSession({
     }, 1000)
     return () => clearInterval(timerRef.current!)
   }, [phase])
+
+  // Calculate button size for 90% screen area
+  useEffect(() => {
+    const calculateButtonSize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+      const screenArea = width * height
+      const buttonArea = 0.9 * screenArea
+      const size = Math.sqrt(buttonArea)
+      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
+    }
+    calculateButtonSize()
+    window.addEventListener('resize', calculateButtonSize)
+    return () => window.removeEventListener('resize', calculateButtonSize)
+  }, [])
 
   const start = () => {
     reset()
@@ -134,10 +151,11 @@ export function MaxPerformanceSession({
               animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
               transition={{ duration: 0.22 }}
               onClick={isTap ? addRep : undefined}
-              className={`relative w-60 h-60 rounded-full shadow-2xl flex flex-col items-center justify-center select-none
+              className={`relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none
                 ${isTap
                   ? 'bg-brand-500 shadow-brand-300 active:scale-95 transition-transform cursor-pointer'
                   : 'bg-brand-50 border-4 border-brand-200 cursor-default'}`}
+              style={{ width: buttonSize, height: buttonSize }}
             >
               <div className={`text-8xl font-black leading-none ${isTap ? 'text-white' : 'text-brand-600'}`}>
                 {displayCount}

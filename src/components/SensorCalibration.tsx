@@ -27,6 +27,12 @@ const MODE_INFO: Record<SensorMode, { icon: React.ReactNode; label: string; desc
     description: 'Téléphone au sol face vers le haut. La caméra détecte ton visage.',
     setupText: 'Pose ton téléphone au sol sous ton visage, caméra vers le haut. Ton visage doit être visible.',
   },
+  proximity: {
+    icon: <Smartphone size={28} />,
+    label: 'Capteur de proximité',
+    description: 'Détecte la proximité de ton visage avec l\'écran pendant les pompes.',
+    setupText: 'Tiens ton téléphone verticalement, écran face à toi. Rapproche-toi et éloigne-toi de l\'écran.',
+  },
   tap: {
     icon: <Hand size={28} />,
     label: 'Tap manuel',
@@ -41,6 +47,7 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
   const [testCount, setTestCount] = useState(0)
   const [testing, setTesting] = useState(false)
   const [error, setError]     = useState('')
+  const [buttonSize, setButtonSize] = useState(144) // default 144px
 
   const accRef       = useRef(false)
   const smoothed     = useRef(9.8)
@@ -55,6 +62,21 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
     setTestCount(0)
     setError('')
   }, [mode])
+
+  // Calculate button size for 90% screen area
+  useEffect(() => {
+    const calculateButtonSize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+      const screenArea = width * height
+      const buttonArea = 0.9 * screenArea
+      const size = Math.sqrt(buttonArea)
+      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
+    }
+    calculateButtonSize()
+    window.addEventListener('resize', calculateButtonSize)
+    return () => window.removeEventListener('resize', calculateButtonSize)
+  }, [])
 
   // Cleanup sensor on unmount
   useEffect(() => {
@@ -113,6 +135,15 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
         setTesting(false)
         return
       }
+    } else if (mode === 'proximity') {
+      // Check if proximity sensor is supported
+      const hasProximitySupport = 'ondeviceproximity' in window || 'deviceproximity' in window
+      if (!hasProximitySupport) {
+        setError('Capteur de proximité non disponible sur cet appareil.')
+        setTesting(false)
+        return
+      }
+      // Proximity sensor test logic will be handled in the UI
     }
   }
 
@@ -136,7 +167,7 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
         {step === 'choose' && (
           <motion.div key="choose" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
             <p className="text-gray-600 text-sm">Choisis comment tes pompes seront comptées :</p>
-            {(['accelerometer', 'camera', 'tap'] as SensorMode[]).map(m => {
+            {(['accelerometer', 'camera', 'proximity', 'tap'] as SensorMode[]).map(m => {
               const info = MODE_INFO[m]
               return (
                 <button key={m} onClick={() => setMode(m)}
@@ -199,7 +230,8 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
               <motion.button
                 whileTap={{ scale: 0.93 }}
                 onClick={() => setTestCount(c => Math.min(c + 1, 3))}
-                className="w-36 h-36 rounded-full bg-brand-500 text-white font-bold text-lg shadow-xl shadow-brand-200 select-none"
+                className="rounded-full bg-brand-500 text-white font-bold text-lg shadow-xl shadow-brand-200 select-none"
+                style={{ width: buttonSize, height: buttonSize }}
               >
                 TAP
               </motion.button>

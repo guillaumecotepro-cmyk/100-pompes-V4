@@ -32,6 +32,12 @@ const MODE_INSTRUCTIONS: Record<SensorMode, string[]> = {
     'Fais tes pompes — la caméra détecte chaque descente',
     'Appuie Terminer quand tu ne peux plus',
   ],
+  proximity: [
+    'Tiens ton téléphone verticalement, écran face à toi',
+    'Appuie sur Démarrer',
+    'Fais tes pompes — le capteur détecte ta proximité',
+    'Appuie Terminer quand tu ne peux plus',
+  ],
 }
 
 interface InitialTestProps {
@@ -47,6 +53,7 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
   const [goal, setGoal]           = useState(100)
   const [customGoal, setCustomGoal] = useState('')
   const [showCustom, setShowCustom] = useState(false)
+  const [buttonSize, setButtonSize] = useState(224) // default 224px
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTime = useRef(0)
 
@@ -80,6 +87,21 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
     }
   }, [phase, displayCount, goal])
 
+  // Calculate button size for 90% screen area
+  useEffect(() => {
+    const calculateButtonSize = () => {
+      const width = window.innerWidth
+      const height = window.innerHeight
+      const screenArea = width * height
+      const buttonArea = 0.9 * screenArea
+      const size = Math.sqrt(buttonArea)
+      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
+    }
+    calculateButtonSize()
+    window.addEventListener('resize', calculateButtonSize)
+    return () => window.removeEventListener('resize', calculateButtonSize)
+  }, [])
+
   const start = () => { reset(); setElapsed(0); setPhase('active') }
   const stop  = () => { setPhase('done') }
 
@@ -112,7 +134,10 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
             <div className="flex items-center gap-2 bg-brand-50 rounded-full px-3 py-1.5 self-start">
               <Zap size={13} className="text-brand-500" />
               <span className="text-xs font-semibold text-brand-700">
-                {sensorMode === 'tap' ? 'Tap manuel' : sensorMode === 'accelerometer' ? 'Capteur de mouvement' : 'Caméra frontale'}
+                {sensorMode === 'tap' ? 'Tap manuel' : 
+                 sensorMode === 'accelerometer' ? 'Capteur de mouvement' : 
+                 sensorMode === 'camera' ? 'Caméra frontale' :
+                 'Capteur de proximité'}
               </span>
             </div>
             <Card>
@@ -144,10 +169,11 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
               animate={pulseKey > 0 ? { scale: [1, 1.06, 1] } : {}}
               transition={{ duration: 0.25 }}
               onClick={isTap ? addRep : undefined}
-              className={`relative w-56 h-56 rounded-full shadow-2xl flex flex-col items-center justify-center select-none
+              className={`relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none
                 ${isTap
                   ? 'bg-brand-500 shadow-brand-300 active:scale-95 transition-transform cursor-pointer'
                   : 'bg-brand-50 border-4 border-brand-200 cursor-default'}`}
+              style={{ width: buttonSize, height: buttonSize }}
             >
               <div className={`text-7xl font-black leading-none ${isTap ? 'text-white' : 'text-brand-600'}`}>
                 {displayCount}
