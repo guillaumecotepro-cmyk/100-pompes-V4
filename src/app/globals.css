@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Remove iOS tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  height: 100%;
+  /* Prevent iOS bounce at document level */
+  overflow: hidden;
+}
+
+body {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  background-color: #F9FAFB;
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Hide scrollbar globally */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area utilities */
+.safe-top    { padding-top:    env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+/* Gradient brand text */
+.text-brand-gradient {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Number input: hide arrows */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+
+/* Prevent double-tap zoom on buttons */
+button {
+  touch-action: manipulation;
+}
