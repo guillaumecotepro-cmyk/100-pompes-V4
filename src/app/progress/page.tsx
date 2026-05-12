@@ -50,7 +50,7 @@ export default function ProgressPage() {
   if (!hydrated || !profile) return null
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="app-page bg-gray-50">
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100">
         <h1 className="text-xl font-black text-gray-900 flex items-center gap-2">
           <TrendingUp size={20} className="text-brand-500" /> Progression

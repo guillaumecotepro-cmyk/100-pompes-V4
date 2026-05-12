@@ -20,7 +20,7 @@ export default function HistoryPage() {
   }, {})
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="app-page bg-gray-50">
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100 flex items-center gap-3">
         <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />

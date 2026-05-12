@@ -16,8 +16,7 @@ export function Navigation() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100"
-         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <nav className="bottom-nav fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100">
       <div className="grid grid-cols-4 max-w-md mx-auto">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/')

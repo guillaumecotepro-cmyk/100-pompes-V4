@@ -22,7 +22,7 @@ export default function ProfilePage() {
   }))
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="app-page bg-gray-50">
       {/* Header */}
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100">
         <div className="flex items-center gap-4">

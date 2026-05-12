@@ -49,11 +49,11 @@ export default function WorkoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="app-content-page bg-white flex flex-col">
       <AnimatePresence mode="wait">
         {phase === 'workout' && (
           <motion.div key="work" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col pt-14 px-4 pb-6">
+            className="flex-1 flex flex-col pt-14 px-4 pb-6 safe-bottom">
             <ActiveWorkout
               session={session}
               sensorMode={data.preferredSensorMode}
@@ -64,7 +64,7 @@ export default function WorkoutPage() {
         )}
 
         {phase === 'summary' && (
-          <motion.div key="sum" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 pt-14 pb-8">
+          <motion.div key="sum" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 pt-14 pb-8 safe-bottom">
             <WorkoutSummary
               sets={completedSets}
               targetReps={session.totalTarget}
