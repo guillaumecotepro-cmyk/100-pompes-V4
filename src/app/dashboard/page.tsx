@@ -46,7 +46,11 @@ export default function DashboardPage() {
           </div>
           <div className="w-11 h-11 rounded-full flex items-center justify-center text-white font-black text-lg"
             style={{ backgroundColor: profile.avatarColor }}>
-            {profile.name[0].toUpperCase()}
+            {profile.avatarImage ? (
+              <img src={profile.avatarImage} alt="" className="w-full h-full rounded-full object-cover" />
+            ) : (
+              profile.name[0].toUpperCase()
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2 mt-3">

@@ -6,6 +6,12 @@
   --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
   --bottom-nav-height: 5.75rem;
   --page-bottom-gutter: 1.5rem;
+  --ink: #07152f;
+  --paper: #fffaf4;
+  --panel: #fffefd;
+  --line: #ffd9ae;
+  --brand-soft: #ffb987;
+  --brand-hot: #ff6b13;
 }
 
 /* Remove iOS tap highlight */
@@ -24,7 +30,10 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: none;
-  background-color: #F9FAFB;
+  background:
+    radial-gradient(circle at 50% -8rem, rgba(255, 185, 135, 0.22), transparent 28rem),
+    var(--paper);
+  color: var(--ink);
   font-family: var(--font-inter);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -42,23 +51,45 @@ body {
 
 /* Page layouts */
 .app-page {
-  min-height: 100dvh;
+  min-height: 75dvh;
   padding-bottom: calc(var(--bottom-nav-height) + var(--page-bottom-gutter) + env(safe-area-inset-bottom));
+  max-width: 48rem;
+  margin-inline: auto;
+  background: rgba(255, 254, 253, 0.86);
+  box-shadow: 0 2rem 5rem rgba(7, 21, 47, 0.08);
+  overflow: visible;
 }
 
 .app-content-page {
-  min-height: 100dvh;
+  min-height: 75dvh;
   padding-bottom: calc(var(--page-bottom-gutter) + env(safe-area-inset-bottom));
+  max-width: 48rem;
+  margin-inline: auto;
+  background: rgba(255, 254, 253, 0.86);
+  box-shadow: 0 2rem 5rem rgba(7, 21, 47, 0.08);
+  overflow: visible;
+}
+
+.page-scroll-gutter {
+  padding-bottom: calc(2rem + env(safe-area-inset-bottom));
 }
 
 .bottom-nav {
   min-height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
+  width: min(100%, 48rem);
+  max-width: 48rem;
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  border-color: rgba(255, 217, 174, 0.85);
+  background: rgba(255, 254, 253, 0.95);
+  backdrop-filter: blur(16px);
 }
 
 /* Gradient brand text */
 .text-brand-gradient {
-  background: linear-gradient(135deg, #f97316, #ea580c);
+  background: linear-gradient(135deg, var(--brand-hot), #f59e0b);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -73,4 +104,62 @@ input[type='number']::-webkit-outer-spin-button {
 /* Prevent double-tap zoom on buttons */
 button {
   touch-action: manipulation;
+}
+
+.app-hero {
+  position: relative;
+  height: 25dvh;
+  min-height: 11rem;
+  max-height: 18rem;
+  overflow: hidden;
+  max-width: 48rem;
+  margin-inline: auto;
+  border-bottom: 1px solid rgba(255, 217, 174, 0.75);
+  background: #f4f6f5;
+  box-shadow: 0 1.75rem 4rem rgba(7, 21, 47, 0.12);
+}
+
+.app-hero__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.app-hero__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(7, 21, 47, 0.34), rgba(7, 21, 47, 0.02) 48%, rgba(255, 250, 244, 0.26)),
+    linear-gradient(90deg, rgba(7, 21, 47, 0.2), transparent 44%);
+  pointer-events: none;
+}
+
+.app-hero__logo {
+  position: absolute;
+  top: max(0.8rem, env(safe-area-inset-top));
+  left: 1rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1.1rem;
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 1rem 2rem rgba(7, 21, 47, 0.18);
+  backdrop-filter: blur(12px);
+}
+
+.app-hero__logo-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.85rem;
+  object-fit: cover;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .app-hero__logo {
+    width: 5rem;
+    height: 5rem;
+  }
 }

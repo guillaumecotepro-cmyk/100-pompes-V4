@@ -10,7 +10,7 @@ import { useAppData } from '@/hooks/useWorkoutProgram'
 
 const FEATURES = [
   { Icon: Target,     title: 'Test initial',         desc: 'Évalue ton niveau et reçois un programme sur mesure.' },
-  { Icon: Zap,        title: 'Comptage automatique',  desc: 'Capteur de mouvement, caméra ou tap — tu choisis.' },
+  { Icon: Zap,        title: 'Comptage automatique',  desc: 'Caméra, proximité ou tap — tu choisis.' },
   { Icon: TrendingUp, title: 'Progression visuelle',  desc: 'Suivi complet, badges, streaks et statistiques.' },
   { Icon: Smartphone, title: 'Conçu pour l\'iPhone',  desc: 'Mobile-first, rapide, sans connexion requise.' },
 ]
@@ -28,15 +28,20 @@ export default function LandingPage() {
   if (!hydrated) return null
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="app-content-page flex flex-col">
       {/* Hero */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8 text-center">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12 pb-8 text-center">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 bg-brand-50 text-brand-600 rounded-full px-4 py-1.5 text-sm font-semibold mb-6">
+          <img
+            src="/logo-100-pompes.jpg"
+            alt="100 Pompes"
+            className="mx-auto mb-6 h-24 w-24 rounded-xl border border-orange-100 object-cover shadow-lg shadow-orange-100"
+          />
+          <div className="inline-flex items-center gap-2 bg-brand-50 text-brand-600 rounded-full px-4 py-1.5 text-sm font-semibold mb-5">
             <Zap size={14} /> Programme adaptatif
           </div>
           <h1 className="text-5xl font-black text-gray-900 leading-tight mb-4">

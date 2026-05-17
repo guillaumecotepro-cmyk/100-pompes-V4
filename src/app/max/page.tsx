@@ -15,7 +15,7 @@ export default function MaxPage() {
   }, [hydrated, data.onboarded, router])
 
   if (!hydrated) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="app-content-page flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
     </div>
   )
@@ -30,8 +30,8 @@ export default function MaxPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4 border-b border-gray-100">
+    <div className="app-content-page bg-white flex flex-col">
+      <div className="flex items-center gap-3 px-4 pt-6 pb-4 border-b border-gray-100">
         <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />
         </button>
@@ -41,7 +41,7 @@ export default function MaxPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-4 py-5">
+      <div className="flex-1 px-4 pt-5 page-scroll-gutter">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <MaxPerformanceSession
             sensorMode={data.preferredSensorMode}

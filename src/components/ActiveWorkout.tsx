@@ -5,6 +5,7 @@ import { Pause, Play, Minus, X, Zap, ChevronRight } from 'lucide-react'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { Progress } from './ui/Progress'
+import { TapZone } from './ui/TapZone'
 import { SensorMode, ProgramSession, CompletedSet, WorkoutPhase, RhythmQuality } from '@/types'
 import { usePushupCounter } from '@/hooks/usePushupCounter'
 import { useVibration } from '@/hooks/useVibration'
@@ -34,7 +35,6 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
   const [pulseKey, setPulseKey]     = useState(0)
   const [restMsg]                   = useState(getRandomRestMessage)
   const [totalElapsed, setTotalElapsed] = useState(0)
-  const [buttonSize, setButtonSize] = useState(208) // default 208px
   const workoutStart = useRef(Date.now())
   const totalTimer   = useRef<ReturnType<typeof setInterval>>()
   const restTimer    = useRef<ReturnType<typeof setInterval>>()
@@ -62,21 +62,6 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
       setTotalElapsed(Math.floor((Date.now() - workoutStart.current) / 1000))
     }, 1000)
     return () => clearInterval(totalTimer.current)
-  }, [])
-
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
   }, [])
 
   // Rest countdown
@@ -142,7 +127,7 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
   const rhythmInfo  = RHYTHM_LABELS[rhythmQuality]
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col min-h-[calc(75dvh-4rem)]">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
@@ -193,25 +178,23 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
             <p className={`text-sm font-medium ${rhythmInfo.color}`}>{rhythmInfo.label}</p>
 
             {/* Counter + tap zone */}
-            <motion.button
-              key={pulseKey}
-              animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
-              transition={{ duration: 0.25 }}
-              onClick={() => sensorMode === 'tap' ? addRep() : undefined}
-              className={`relative rounded-full flex flex-col items-center justify-center select-none
-                ${sensorMode === 'tap' ? 'bg-brand-500 shadow-2xl shadow-brand-300 active:scale-95 transition-transform cursor-pointer' : 'bg-brand-50 border-4 border-brand-200'}`}
-              style={{ width: buttonSize, height: buttonSize }}
-            >
-              <div className={`text-8xl font-black leading-none ${sensorMode === 'tap' ? 'text-white' : 'text-brand-600'}`}>
-                {count}
-              </div>
-              <div className={`text-sm font-medium mt-1 ${sensorMode === 'tap' ? 'text-white/70' : 'text-brand-400'}`}>
-                / {targetSet?.reps}
-              </div>
-              {sensorMode === 'tap' && (
-                <div className="absolute bottom-5 text-white/60 text-xs">TAPE ICI</div>
-              )}
-            </motion.button>
+            {sensorMode === 'tap' ? (
+              <TapZone onTap={addRep} pulseKey={pulseKey}>
+                <div className="text-8xl font-black leading-none">{count}</div>
+                <div className="text-sm font-medium mt-1 text-white/70">/ {targetSet?.reps}</div>
+                <div className="absolute bottom-6 text-white/60 text-xs">TAPE ICI</div>
+              </TapZone>
+            ) : (
+              <motion.button
+                key={pulseKey}
+                animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
+                transition={{ duration: 0.25 }}
+                className="relative rounded-full flex flex-col items-center justify-center select-none bg-brand-50 border-4 border-brand-200 w-52 h-52"
+              >
+                <div className="text-8xl font-black leading-none text-brand-600">{count}</div>
+                <div className="text-sm font-medium mt-1 text-brand-400">/ {targetSet?.reps}</div>
+              </motion.button>
+            )}
 
             {sensorMode !== 'tap' && (
               <div className="flex items-center gap-2 bg-brand-50 rounded-full px-4 py-1.5">

@@ -13,14 +13,25 @@ function TestPageInner() {
   const name = searchParams.get('name') ?? 'Athlète'
 
   const handleComplete = (score: number) => {
-    setProfile(name, score)
+    let pendingProfile: { name?: string; avatarColor?: string; avatarImage?: string | null } = {}
+    try {
+      pendingProfile = JSON.parse(window.sessionStorage.getItem('pendingProfile') ?? '{}')
+    } catch {
+      pendingProfile = {}
+    }
+
+    setProfile(pendingProfile.name ?? name, score, {
+      avatarColor: pendingProfile.avatarColor,
+      avatarImage: pendingProfile.avatarImage,
+    })
+    window.sessionStorage.removeItem('pendingProfile')
     startProgram(score)
     router.push('/dashboard')
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+    <div className="app-content-page bg-white flex flex-col">
+      <div className="flex items-center gap-3 px-4 pt-6 pb-4">
         <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />
         </button>
@@ -29,7 +40,7 @@ function TestPageInner() {
           <p className="text-xs text-gray-500">Fais ton maximum en une seule série</p>
         </div>
       </div>
-      <div className="flex-1 px-4 pb-8">
+      <div className="flex-1 px-4 page-scroll-gutter">
         <InitialTest sensorMode={data.preferredSensorMode} onComplete={handleComplete} />
       </div>
     </div>

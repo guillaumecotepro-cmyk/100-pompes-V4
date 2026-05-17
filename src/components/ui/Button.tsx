@@ -14,17 +14,17 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<Variant, string> = {
-  primary:   'bg-brand-500 text-white shadow-md shadow-brand-200 hover:bg-brand-600 active:bg-brand-700',
-  secondary: 'bg-white text-gray-800 border border-gray-200 hover:bg-gray-50 active:bg-gray-100',
-  ghost:     'bg-transparent text-gray-600 hover:bg-gray-100 active:bg-gray-200',
-  danger:    'bg-red-500 text-white hover:bg-red-600 active:bg-red-700',
+  primary:   'bg-brand-500 text-white shadow-lg shadow-brand-200 hover:bg-brand-600 active:bg-brand-700',
+  secondary: 'bg-white text-slate-800 border border-orange-100 hover:bg-orange-50 active:bg-orange-100',
+  ghost:     'bg-transparent text-slate-600 hover:bg-orange-50 active:bg-orange-100',
+  danger:    'bg-red-500 text-white shadow-lg shadow-red-100 hover:bg-red-600 active:bg-red-700',
 }
 
 const sizeClasses: Record<Size, string> = {
-  sm:  'h-9  px-4  text-sm  rounded-xl',
-  md:  'h-11 px-5  text-base rounded-2xl',
-  lg:  'h-14 px-6  text-lg  rounded-2xl font-semibold',
-  xl:  'h-16 px-8  text-xl  rounded-2xl font-bold',
+  sm:  'h-9  px-4  text-sm  rounded-lg',
+  md:  'h-11 px-5  text-base rounded-xl',
+  lg:  'h-14 px-6  text-lg  rounded-xl font-semibold',
+  xl:  'h-16 px-8  text-xl  rounded-xl font-bold',
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(

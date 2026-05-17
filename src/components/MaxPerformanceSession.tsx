@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Square, Minus, Zap, Trophy } from 'lucide-react'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
+import { TapZone } from './ui/TapZone'
 import { usePushupCounter } from '@/hooks/usePushupCounter'
 import { useVibration } from '@/hooks/useVibration'
 import { SensorMode } from '@/types'
@@ -33,7 +34,6 @@ export function MaxPerformanceSession({
   const [pulseKey, setPulseKey] = useState(0)
   const [displayCount, setDisplayCount] = useState(0)
   const [isNewRecord, setIsNewRecord]   = useState(false)
-  const [buttonSize, setButtonSize] = useState(240) // default 240px
   const startTime = useRef(0)
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const { vibrateRep, vibrateComplete } = useVibration()
@@ -58,21 +58,6 @@ export function MaxPerformanceSession({
     }, 1000)
     return () => clearInterval(timerRef.current!)
   }, [phase])
-
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
-  }, [])
 
   const start = () => {
     reset()
@@ -146,25 +131,27 @@ export function MaxPerformanceSession({
             <p className="text-gray-400 text-sm font-mono">{formatDuration(elapsed)}</p>
 
             {/* Counter */}
-            <motion.button
-              key={pulseKey}
-              animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
-              transition={{ duration: 0.22 }}
-              onClick={isTap ? addRep : undefined}
-              className={`relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none
-                ${isTap
-                  ? 'bg-brand-500 shadow-brand-300 active:scale-95 transition-transform cursor-pointer'
-                  : 'bg-brand-50 border-4 border-brand-200 cursor-default'}`}
-              style={{ width: buttonSize, height: buttonSize }}
-            >
-              <div className={`text-8xl font-black leading-none ${isTap ? 'text-white' : 'text-brand-600'}`}>
-                {displayCount}
-              </div>
-              <div className={`text-sm mt-1 font-semibold ${isTap ? 'text-white/70' : 'text-brand-400'}`}>
-                pompe{displayCount !== 1 ? 's' : ''}
-              </div>
-              {isTap && <div className="absolute bottom-6 text-white/50 text-xs">TAPE ICI</div>}
-            </motion.button>
+            {isTap ? (
+              <TapZone onTap={addRep} pulseKey={pulseKey}>
+                <div className="text-8xl font-black leading-none">{displayCount}</div>
+                <div className="text-sm mt-1 font-semibold text-white/70">
+                  pompe{displayCount !== 1 ? 's' : ''}
+                </div>
+                <div className="absolute bottom-6 text-white/50 text-xs">TAPE ICI</div>
+              </TapZone>
+            ) : (
+              <motion.button
+                key={pulseKey}
+                animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
+                transition={{ duration: 0.22 }}
+                className="relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none bg-brand-50 border-4 border-brand-200 cursor-default w-60 h-60"
+              >
+                <div className="text-8xl font-black leading-none text-brand-600">{displayCount}</div>
+                <div className="text-sm mt-1 font-semibold text-brand-400">
+                  pompe{displayCount !== 1 ? 's' : ''}
+                </div>
+              </motion.button>
+            )}
 
             {/* Personal best progress */}
             {pctOfBest !== null && (

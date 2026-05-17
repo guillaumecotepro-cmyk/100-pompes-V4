@@ -27,10 +27,14 @@ export default function ProfilePage() {
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100">
         <div className="flex items-center gap-4">
           <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md"
+            className="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md overflow-hidden"
             style={{ backgroundColor: profile.avatarColor }}
           >
-            {profile.name[0].toUpperCase()}
+            {profile.avatarImage ? (
+              <img src={profile.avatarImage} alt="" className="w-full h-full object-cover" />
+            ) : (
+              profile.name[0].toUpperCase()
+            )}
           </div>
           <div>
             <h1 className="text-xl font-black text-gray-900">{profile.name}</h1>

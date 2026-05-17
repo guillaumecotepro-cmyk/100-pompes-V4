@@ -10,6 +10,7 @@ export interface UserProfile {
   level: Level
   createdAt: string
   avatarColor: string
+  avatarImage?: string | null
 }
 
 export interface UserStats {
@@ -74,6 +75,8 @@ export interface MaxPerformanceRecord {
 }
 
 export interface AppData {
+  schemaVersion: number
+  updatedAt: string | null
   profile: UserProfile | null
   stats: UserStats
   program: WorkoutProgram | null

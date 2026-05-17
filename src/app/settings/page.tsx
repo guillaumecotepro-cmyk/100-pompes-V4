@@ -10,8 +10,8 @@ import { useAppData } from '@/hooks/useWorkoutProgram'
 import { SensorMode } from '@/types'
 
 const SENSOR_OPTIONS: { mode: SensorMode; Icon: typeof Smartphone; label: string; desc: string }[] = [
-  { mode: 'accelerometer', Icon: Smartphone, label: 'Capteur de mouvement', desc: 'Téléphone sur le dos' },
   { mode: 'camera',        Icon: Camera,     label: 'Caméra frontale',       desc: 'Téléphone au sol' },
+  { mode: 'proximity',     Icon: Smartphone, label: 'Capteur de proximité',  desc: 'Proximité écran' },
   { mode: 'tap',           Icon: Hand,       label: 'Tap manuel',            desc: 'Appui écran' },
 ]
 
@@ -84,7 +84,14 @@ export default function SettingsPage() {
           <Card>
             <div className="flex flex-col gap-1 text-sm text-gray-600">
               <p><span className="font-semibold">100 Pompes</span> v0.1.0</p>
-              <p className="text-xs text-gray-400">Données stockées localement sur cet appareil. Aucune connexion requise.</p>
+              <p className="text-xs text-gray-400">
+                Données stockées localement avec sauvegarde versionnée pour préserver tes séances lors des mises à jour.
+              </p>
+              {data.updatedAt && (
+                <p className="text-xs text-gray-400">
+                  Dernière sauvegarde : {new Date(data.updatedAt).toLocaleDateString('fr-FR')}
+                </p>
+              )}
             </div>
           </Card>
         </div>

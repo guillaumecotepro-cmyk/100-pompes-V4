@@ -1,35 +1,69 @@
 'use client'
-import { useState } from 'react'
+import { ChangeEvent, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronLeft, ChevronRight, User } from 'lucide-react'
+import { Camera, ChevronLeft, ChevronRight, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
-import { useAppData } from '@/hooks/useWorkoutProgram'
 
 const AVATAR_COLORS = ['#f97316', '#3b82f6', '#10b981', '#a855f7', '#f43f5e', '#eab308']
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const { data, setProfile } = useAppData()
   const [step, setStep]   = useState(0)
   const [name, setName]   = useState('')
   const [color, setColor] = useState(AVATAR_COLORS[0])
+  const [avatarImage, setAvatarImage] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const goNext = () => setStep(s => s + 1)
   const goBack = () => step > 0 ? setStep(s => s - 1) : router.back()
 
   const handleFinish = async () => {
     setLoading(true)
+    window.sessionStorage.setItem('pendingProfile', JSON.stringify({
+      name: name.trim() || 'Athlète',
+      avatarColor: color,
+      avatarImage,
+    }))
     await new Promise(r => setTimeout(r, 300))
     router.push(`/calibration?name=${encodeURIComponent(name.trim() || 'Athlète')}`)
   }
 
+  const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const size = 320
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        const scale = Math.max(size / img.width, size / img.height)
+        const width = img.width * scale
+        const height = img.height * scale
+        const x = (size - width) / 2
+        const y = (size - height) / 2
+        ctx.drawImage(img, x, y, width, height)
+        setAvatarImage(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="app-content-page bg-white flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+      <div className="flex items-center gap-3 px-4 pt-6 pb-4">
         <button onClick={goBack} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />
         </button>
@@ -40,7 +74,7 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-4">
+      <div className="flex-1 px-5 pt-4 page-scroll-gutter">
         <AnimatePresence mode="wait">
           {step === 0 && (
             <motion.div key={0} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
@@ -82,11 +116,41 @@ export default function OnboardingPage() {
               {/* Avatar preview */}
               <div className="flex flex-col items-center gap-4">
                 <div
-                  className="w-20 h-20 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg"
+                  className="relative w-24 h-24 rounded-full flex items-center justify-center text-white text-3xl font-black shadow-lg overflow-hidden"
                   style={{ backgroundColor: color }}
                 >
-                  {name ? name[0].toUpperCase() : <User size={32} />}
+                  {avatarImage ? (
+                    <img src={avatarImage} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    name ? name[0].toUpperCase() : <User size={32} />
+                  )}
                 </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-10 px-4 rounded-2xl bg-brand-500 text-white text-sm font-bold flex items-center gap-2 shadow-md shadow-brand-200"
+                  >
+                    <Camera size={16} /> Ajouter une photo
+                  </button>
+                  {avatarImage && (
+                    <button
+                      type="button"
+                      onClick={() => setAvatarImage(null)}
+                      className="w-10 h-10 rounded-2xl bg-gray-100 text-gray-500 flex items-center justify-center"
+                      aria-label="Retirer la photo"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
                 <div className="flex gap-2">
                   {AVATAR_COLORS.map(c => (
                     <button key={c} onClick={() => setColor(c)}

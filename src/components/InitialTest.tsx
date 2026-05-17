@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Play, Square, Minus, CheckCircle, Zap, Target, ChevronRight } from 'lucide-react'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
+import { TapZone } from './ui/TapZone'
 import { getLevelFromScore, getLevelLabel, getLevelBadgeClass } from '@/lib/utils'
 import { usePushupCounter } from '@/hooks/usePushupCounter'
 import { estimateProgramDuration } from '@/lib/programGenerator'
@@ -53,7 +54,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
   const [goal, setGoal]           = useState(100)
   const [customGoal, setCustomGoal] = useState('')
   const [showCustom, setShowCustom] = useState(false)
-  const [buttonSize, setButtonSize] = useState(224) // default 224px
   const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTime = useRef(0)
 
@@ -86,21 +86,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
       setGoal(next)
     }
   }, [phase, displayCount, goal])
-
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
-  }, [])
 
   const start = () => { reset(); setElapsed(0); setPhase('active') }
   const stop  = () => { setPhase('done') }
@@ -164,25 +149,27 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
           <motion.div key="active" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
             className="flex flex-col items-center gap-4">
             <p className="text-gray-500 text-sm font-mono">{formatTime(elapsed)}</p>
-            <motion.button
-              key={pulseKey}
-              animate={pulseKey > 0 ? { scale: [1, 1.06, 1] } : {}}
-              transition={{ duration: 0.25 }}
-              onClick={isTap ? addRep : undefined}
-              className={`relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none
-                ${isTap
-                  ? 'bg-brand-500 shadow-brand-300 active:scale-95 transition-transform cursor-pointer'
-                  : 'bg-brand-50 border-4 border-brand-200 cursor-default'}`}
-              style={{ width: buttonSize, height: buttonSize }}
-            >
-              <div className={`text-7xl font-black leading-none ${isTap ? 'text-white' : 'text-brand-600'}`}>
-                {displayCount}
-              </div>
-              <div className={`text-sm font-semibold mt-1 ${isTap ? 'text-white/70' : 'text-brand-400'}`}>
-                pompe{displayCount !== 1 ? 's' : ''}
-              </div>
-              {isTap && <div className="absolute bottom-5 text-white/60 text-xs">TAPE ICI</div>}
-            </motion.button>
+            {isTap ? (
+              <TapZone onTap={addRep} pulseKey={pulseKey}>
+                <div className="text-7xl font-black leading-none">{displayCount}</div>
+                <div className="text-sm font-semibold mt-1 text-white/70">
+                  pompe{displayCount !== 1 ? 's' : ''}
+                </div>
+                <div className="absolute bottom-6 text-white/60 text-xs">TAPE ICI</div>
+              </TapZone>
+            ) : (
+              <motion.button
+                key={pulseKey}
+                animate={pulseKey > 0 ? { scale: [1, 1.06, 1] } : {}}
+                transition={{ duration: 0.25 }}
+                className="relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none bg-brand-50 border-4 border-brand-200 cursor-default w-56 h-56"
+              >
+                <div className="text-7xl font-black leading-none text-brand-600">{displayCount}</div>
+                <div className="text-sm font-semibold mt-1 text-brand-400">
+                  pompe{displayCount !== 1 ? 's' : ''}
+                </div>
+              </motion.button>
+            )}
             {!isTap && (
               <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium
                 ${sensorReady ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>

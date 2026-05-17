@@ -1,7 +1,10 @@
 import { AppData, UserStats, WorkoutHistory } from '@/types'
 import { ALL_BADGES } from './programGenerator'
 
-const STORAGE_KEY = '100pompes_v1'
+export const STORAGE_SCHEMA_VERSION = 2
+export const STORAGE_KEY = '100pompes_v1'
+export const STORAGE_BACKUP_KEY = '100pompes_v1_backup'
+export const LEGACY_STORAGE_KEYS = ['100pompes_data']
 
 export const DEFAULT_STATS: UserStats = {
   totalPushups: 0,
@@ -15,6 +18,8 @@ export const DEFAULT_STATS: UserStats = {
 }
 
 export const DEFAULT_APP_DATA: AppData = {
+  schemaVersion: STORAGE_SCHEMA_VERSION,
+  updatedAt: null,
   profile: null,
   stats: DEFAULT_STATS,
   program: null,
@@ -25,12 +30,49 @@ export const DEFAULT_APP_DATA: AppData = {
   preferredSensorMode: 'tap',
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function migrateAppData(raw: unknown): AppData {
+  const source = isRecord(raw) && isRecord(raw.data) ? raw.data : raw
+  const candidate = isRecord(source) ? source : {}
+  const stats = isRecord(candidate.stats) ? candidate.stats : {}
+  const preferredSensorMode = candidate.preferredSensorMode === 'accelerometer'
+    ? 'tap'
+    : candidate.preferredSensorMode
+
+  return {
+    ...candidate,
+    schemaVersion: STORAGE_SCHEMA_VERSION,
+    updatedAt: typeof candidate.updatedAt === 'string' ? candidate.updatedAt : null,
+    profile: isRecord(candidate.profile) ? candidate.profile as unknown as AppData['profile'] : null,
+    stats: { ...DEFAULT_STATS, ...stats },
+    program: isRecord(candidate.program) ? candidate.program as unknown as AppData['program'] : null,
+    history: Array.isArray(candidate.history) ? candidate.history as unknown as AppData['history'] : [],
+    maxHistory: Array.isArray(candidate.maxHistory) ? candidate.maxHistory as unknown as AppData['maxHistory'] : [],
+    earnedBadges: Array.isArray(candidate.earnedBadges) ? candidate.earnedBadges as string[] : [],
+    onboarded: candidate.onboarded === true,
+    preferredSensorMode: preferredSensorMode === 'camera' || preferredSensorMode === 'proximity' || preferredSensorMode === 'tap'
+      ? preferredSensorMode
+      : DEFAULT_APP_DATA.preferredSensorMode,
+  }
+}
+
+export function prepareAppDataForSave(data: AppData): AppData {
+  return migrateAppData({
+    ...data,
+    schemaVersion: STORAGE_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
 export function loadAppData(): AppData {
   if (typeof window === 'undefined') return DEFAULT_APP_DATA
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return DEFAULT_APP_DATA
-    return { ...DEFAULT_APP_DATA, ...JSON.parse(raw) }
+    return migrateAppData(JSON.parse(raw))
   } catch {
     return DEFAULT_APP_DATA
   }
@@ -39,7 +81,9 @@ export function loadAppData(): AppData {
 export function saveAppData(data: AppData): void {
   if (typeof window === 'undefined') return
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+    const current = localStorage.getItem(STORAGE_KEY)
+    if (current) localStorage.setItem(STORAGE_BACKUP_KEY, current)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prepareAppDataForSave(data)))
   } catch {
     // Storage quota exceeded — silently ignore
   }

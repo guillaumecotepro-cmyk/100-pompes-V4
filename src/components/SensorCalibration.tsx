@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Smartphone, Camera, Hand, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
+import { TapZone } from './ui/TapZone'
 import { SensorMode } from '@/types'
 import { requestAccelerometerPermission } from '@/hooks/usePushupCounter'
 
@@ -41,13 +42,14 @@ const MODE_INFO: Record<SensorMode, { icon: React.ReactNode; label: string; desc
   },
 }
 
+const SELECTABLE_MODES: SensorMode[] = ['camera', 'proximity', 'tap']
+
 export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCalibrationProps) {
   const [step, setStep]       = useState<Step>('choose')
-  const [mode, setMode]       = useState<SensorMode>(initialMode)
+  const [mode, setMode]       = useState<SensorMode>(initialMode === 'accelerometer' ? 'tap' : initialMode)
   const [testCount, setTestCount] = useState(0)
   const [testing, setTesting] = useState(false)
   const [error, setError]     = useState('')
-  const [buttonSize, setButtonSize] = useState(144) // default 144px
 
   const accRef       = useRef(false)
   const smoothed     = useRef(9.8)
@@ -62,21 +64,6 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
     setTestCount(0)
     setError('')
   }, [mode])
-
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
-  }, [])
 
   // Cleanup sensor on unmount
   useEffect(() => {
@@ -167,7 +154,7 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
         {step === 'choose' && (
           <motion.div key="choose" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-3">
             <p className="text-gray-600 text-sm">Choisis comment tes pompes seront comptées :</p>
-            {(['accelerometer', 'camera', 'proximity', 'tap'] as SensorMode[]).map(m => {
+            {SELECTABLE_MODES.map(m => {
               const info = MODE_INFO[m]
               return (
                 <button key={m} onClick={() => setMode(m)}
@@ -227,14 +214,9 @@ export function SensorCalibration({ initialMode = 'tap', onComplete }: SensorCal
             </div>
 
             {mode === 'tap' && (
-              <motion.button
-                whileTap={{ scale: 0.93 }}
-                onClick={() => setTestCount(c => Math.min(c + 1, 3))}
-                className="rounded-full bg-brand-500 text-white font-bold text-lg shadow-xl shadow-brand-200 select-none"
-                style={{ width: buttonSize, height: buttonSize }}
-              >
-                TAP
-              </motion.button>
+              <TapZone onTap={() => setTestCount(c => Math.min(c + 1, 3))}>
+                <span className="text-lg font-bold">TAP</span>
+              </TapZone>
             )}
 
             {error && (
