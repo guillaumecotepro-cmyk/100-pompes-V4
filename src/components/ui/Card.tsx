@@ -12,8 +12,8 @@ export function Card({ padding = 'md', elevated, className, ...props }: CardProp
   return (
     <div
       className={cn(
-        'bg-white rounded-2xl border border-gray-100',
-        elevated ? 'shadow-lg shadow-gray-100' : 'shadow-sm',
+        'bg-white/95 rounded-xl border border-orange-100',
+        elevated ? 'shadow-xl shadow-orange-100/70' : 'shadow-sm shadow-orange-50',
         paddings[padding],
         className
       )}

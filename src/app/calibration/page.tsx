@@ -25,8 +25,8 @@ function CalibrationPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+    <div className="app-content-page bg-white flex flex-col">
+      <div className="flex items-center gap-3 px-4 pt-6 pb-4">
         <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />
         </button>
@@ -37,7 +37,7 @@ function CalibrationPageInner() {
           <p className="text-xs text-gray-500">Comment veux-tu compter tes pompes ?</p>
         </div>
       </div>
-      <div className="flex-1 px-4 pb-8">
+      <div className="flex-1 px-4 page-scroll-gutter">
         <SensorCalibration
           initialMode={data.preferredSensorMode}
           onComplete={handleComplete}

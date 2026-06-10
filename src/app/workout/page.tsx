@@ -25,7 +25,7 @@ export default function WorkoutPage() {
   }, [hydrated, session, router])
 
   if (!hydrated) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="app-content-page flex items-center justify-center">
       <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
     </div>
   )
@@ -53,7 +53,7 @@ export default function WorkoutPage() {
       <AnimatePresence mode="wait">
         {phase === 'workout' && (
           <motion.div key="work" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="flex-1 flex flex-col pt-14 px-4 pb-6 safe-bottom">
+            className="flex-1 flex flex-col pt-6 px-4 page-scroll-gutter">
             <ActiveWorkout
               session={session}
               onComplete={handleWorkoutComplete}
@@ -63,7 +63,7 @@ export default function WorkoutPage() {
         )}
 
         {phase === 'summary' && (
-          <motion.div key="sum" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 pt-14 pb-8 safe-bottom">
+          <motion.div key="sum" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 pt-6 page-scroll-gutter">
             <WorkoutSummary
               sets={completedSets}
               targetReps={session.totalTarget}
