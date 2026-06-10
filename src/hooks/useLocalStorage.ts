@@ -8,6 +8,30 @@ interface UseLocalStorageOptions<T> {
   prepareForSave?: (value: T) => T
 }
 
+function readFromStorage<T>(
+  key: string,
+  fallbackKeys: string[],
+  backupKey: string | undefined,
+  migrate: ((v: unknown) => T) | undefined,
+  prepareForSave: ((v: T) => T) | undefined,
+  initialValue: T,
+): T {
+  const keys = [key, ...fallbackKeys, backupKey].filter(Boolean) as string[]
+  for (const storageKey of keys) {
+    try {
+      const stored = localStorage.getItem(storageKey)
+      if (stored === null) continue
+      const parsed = JSON.parse(stored)
+      const next = migrate ? migrate(parsed) : parsed as T
+      if (storageKey !== key) {
+        localStorage.setItem(key, JSON.stringify(prepareForSave ? prepareForSave(next) : next))
+      }
+      return next
+    } catch { /* try next key */ }
+  }
+  return initialValue
+}
+
 export function useLocalStorage<T>(
   key: string,
   initialValue: T,
@@ -15,29 +39,25 @@ export function useLocalStorage<T>(
 ) {
   const { backupKey, fallbackKeys = [], migrate, prepareForSave } = options
   const fallbackKeysId = fallbackKeys.join('\0')
-  const [value, setValue] = useState<T>(initialValue)
-  const [hydrated, setHydrated] = useState(false)
+
+  const [value, setValue] = useState<T>(() => {
+    if (typeof window === 'undefined') return initialValue
+    try {
+      return readFromStorage(key, fallbackKeys, backupKey, migrate, prepareForSave, initialValue)
+    } catch {
+      return initialValue
+    }
+  })
+  const [hydrated, setHydrated] = useState(() => typeof window !== 'undefined')
 
   useEffect(() => {
-    const keys = [key, ...fallbackKeys, backupKey].filter(Boolean) as string[]
+    if (hydrated) return
     try {
-      for (const storageKey of keys) {
-        const stored = localStorage.getItem(storageKey)
-        if (stored === null) continue
-
-        try {
-          const parsed = JSON.parse(stored)
-          const next = migrate ? migrate(parsed) : parsed as T
-          setValue(next)
-          localStorage.setItem(key, JSON.stringify(prepareForSave ? prepareForSave(next) : next))
-          break
-        } catch {
-          // Try the next source, usually the automatic backup.
-        }
-      }
-    } catch {/* ignore */}
+      const next = readFromStorage(key, fallbackKeys, backupKey, migrate, prepareForSave, initialValue)
+      setValue(next)
+    } catch { /* ignore */ }
     setHydrated(true)
-  }, [key, backupKey, fallbackKeysId, migrate, prepareForSave])
+  }, [key, backupKey, fallbackKeysId, migrate, prepareForSave, hydrated, initialValue])
 
   const set = useCallback((newValue: T | ((prev: T) => T)) => {
     setValue(prev => {

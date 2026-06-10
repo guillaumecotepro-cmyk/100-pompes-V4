@@ -41,7 +41,11 @@ export default function ProfilePage() {
     event.target.value = ''
   }
 
-  if (!profile) return null
+  if (!profile) return (
+    <div className="app-page flex items-center justify-center" style={{ minHeight: '75dvh' }}>
+      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+    </div>
+  )
 
   const allBadges = ALL_BADGES.map(b => ({
     ...b,

@@ -21,7 +21,11 @@ export default function DashboardPage() {
     if (hydrated && !data.onboarded) router.replace('/')
   }, [hydrated, data.onboarded, router])
 
-  if (!hydrated || !data.profile) return null
+  if (!hydrated || !data.profile) return (
+    <div className="app-page flex items-center justify-center" style={{ minHeight: '75dvh' }}>
+      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+    </div>
+  )
 
   const { profile, stats, program, history, maxHistory = [], earnedBadges } = data
   const nextSession       = program ? getNextSession(program) : null

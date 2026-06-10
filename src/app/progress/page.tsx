@@ -47,7 +47,11 @@ export default function ProgressPage() {
     if (hydrated && !data.onboarded) router.replace('/')
   }, [hydrated, data.onboarded, router])
 
-  if (!hydrated || !profile) return null
+  if (!hydrated || !profile) return (
+    <div className="app-page flex items-center justify-center" style={{ minHeight: '75dvh' }}>
+      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+    </div>
+  )
 
   return (
     <div className="app-page bg-gray-50">

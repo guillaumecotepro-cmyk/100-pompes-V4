@@ -25,7 +25,11 @@ export default function LandingPage() {
     }
   }, [hydrated, data.onboarded, router])
 
-  if (!hydrated) return null
+  if (!hydrated) return (
+    <div className="app-content-page flex items-center justify-center" style={{ minHeight: '75dvh' }}>
+      <div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+    </div>
+  )
 
   return (
     <main className="app-content-page flex flex-col">
