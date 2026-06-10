@@ -28,7 +28,7 @@ export default function OnboardingPage() {
       avatarImage,
     }))
     await new Promise(r => setTimeout(r, 300))
-    router.push(`/calibration?name=${encodeURIComponent(name.trim() || 'Athlète')}`)
+    router.push(`/test?name=${encodeURIComponent(name.trim() || 'Athlète')}`)
   }
 
   const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {

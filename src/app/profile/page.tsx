@@ -1,9 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { ChangeEvent, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { User, Settings, ChevronRight, Award, BarChart2, History } from 'lucide-react'
+import { Camera, User, Settings, ChevronRight, Award, BarChart2, History, X } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Navigation } from '@/components/Navigation'
 import { useAppData } from '@/hooks/useWorkoutProgram'
@@ -11,8 +11,35 @@ import { getLevelLabel, getLevelBadgeClass, formatDate } from '@/lib/utils'
 import { ALL_BADGES } from '@/lib/programGenerator'
 
 export default function ProfilePage() {
-  const { data } = useAppData()
+  const { data, updateAvatarImage } = useAppData()
   const { profile, stats, earnedBadges } = data
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handlePhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !file.type.startsWith('image/')) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const img = new Image()
+      img.onload = () => {
+        const size = 320
+        const canvas = document.createElement('canvas')
+        canvas.width = size
+        canvas.height = size
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        const scale = Math.max(size / img.width, size / img.height)
+        const w = img.width * scale
+        const h = img.height * scale
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h)
+        updateAvatarImage(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.src = String(reader.result)
+    }
+    reader.readAsDataURL(file)
+    event.target.value = ''
+  }
 
   if (!profile) return null
 
@@ -26,14 +53,33 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="bg-white px-5 pt-14 pb-5 border-b border-gray-100">
         <div className="flex items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md overflow-hidden"
-            style={{ backgroundColor: profile.avatarColor }}
-          >
-            {profile.avatarImage ? (
-              <img src={profile.avatarImage} alt="" className="w-full h-full object-cover" />
-            ) : (
-              profile.name[0].toUpperCase()
+          <div className="relative">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center text-white font-black text-2xl shadow-md overflow-hidden"
+              style={{ backgroundColor: profile.avatarColor }}
+            >
+              {profile.avatarImage ? (
+                <img src={profile.avatarImage} alt="" className="w-full h-full object-cover" />
+              ) : (
+                profile.name[0].toUpperCase()
+              )}
+            </div>
+            {/* Photo edit button */}
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-md"
+              aria-label="Modifier la photo"
+            >
+              <Camera size={12} />
+            </button>
+            {profile.avatarImage && (
+              <button
+                onClick={() => updateAvatarImage(null)}
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-gray-500 text-white flex items-center justify-center shadow"
+                aria-label="Retirer la photo"
+              >
+                <X size={10} />
+              </button>
             )}
           </div>
           <div>
@@ -46,6 +92,13 @@ export default function ProfilePage() {
         <div className="mt-3 text-xs text-gray-400">
           Membre depuis {formatDate(profile.createdAt)} · Test initial : {profile.initialTestScore} pompes
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-4">

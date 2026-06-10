@@ -8,19 +8,29 @@ import { useAppData } from '@/hooks/useWorkoutProgram'
 function TestPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { data, startProgram, setProfile } = useAppData()
+  const { startProgram, setProfile } = useAppData()
 
   const name = searchParams.get('name') ?? 'Athlète'
 
-  const handleComplete = (score: number) => {
-    setProfile(name, score)
-    startProgram(score)
+  const handleComplete = (score: number, goal: number) => {
+    let pendingProfile: { name?: string; avatarColor?: string; avatarImage?: string | null } = {}
+    try {
+      pendingProfile = JSON.parse(window.sessionStorage.getItem('pendingProfile') ?? '{}')
+    } catch {
+      pendingProfile = {}
+    }
+    setProfile(pendingProfile.name ?? name, score, {
+      avatarColor: pendingProfile.avatarColor,
+      avatarImage: pendingProfile.avatarImage,
+    })
+    window.sessionStorage.removeItem('pendingProfile')
+    startProgram(score, goal)
     router.push('/dashboard')
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+      <div className="flex items-center gap-3 px-4 pt-6 pb-4">
         <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100">
           <ChevronLeft size={22} className="text-gray-500" />
         </button>

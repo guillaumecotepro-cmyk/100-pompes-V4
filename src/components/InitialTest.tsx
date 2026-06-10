@@ -124,7 +124,7 @@ export function InitialTest({ onComplete }: InitialTestProps) {
               transition={{ duration: 0.15 }}
               onTouchStart={(e) => { e.preventDefault(); addRep() }}
               onClick={addRep}
-              className="flex-1 mx-3 rounded-3xl bg-white/10 flex flex-col items-center justify-center select-none relative"
+              className="flex-1 w-full bg-white/15 flex flex-col items-center justify-center select-none relative"
               style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
             >
               <div className="text-[100px] font-black leading-none text-white tabular-nums">{displayCount}</div>

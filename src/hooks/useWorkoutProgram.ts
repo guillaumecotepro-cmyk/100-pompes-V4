@@ -139,6 +139,13 @@ export function useAppData() {
     })
   }, [setData])
 
+  const updateAvatarImage = useCallback((avatarImage: string | null) => {
+    setData(prev => {
+      if (!prev.profile) return prev
+      return { ...prev, profile: { ...prev.profile, avatarImage } }
+    })
+  }, [setData])
+
   const resetApp = useCallback(() => {
     setData(DEFAULT_APP_DATA)
   }, [setData])
@@ -151,6 +158,7 @@ export function useAppData() {
     startProgram,
     setProfile,
     setSensorMode,
+    updateAvatarImage,
     resetApp,
   }
 }
