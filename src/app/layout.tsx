@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { AppHero } from '@/components/AppHero'
+import { InstallPrompt } from '@/components/InstallPrompt'
 import './globals.css'
 
 const inter = Inter({
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: '100 Pompes',
   },
   icons: {
@@ -30,15 +31,16 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#F9FAFB',
+  themeColor: '#fffaf4',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={inter.variable}>
-      <body className="min-h-screen">
+      <body>
         <AppHero />
         {children}
+        <InstallPrompt />
       </body>
     </html>
   )

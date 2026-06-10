@@ -165,3 +165,91 @@ button {
     height: 5rem;
   }
 }
+
+/* ── Install prompt banner ──────────────────────────────── */
+.install-prompt {
+  position: fixed;
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(calc(100% - 2rem), 28rem);
+  z-index: 200;
+  background: rgba(7, 21, 47, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 1.25rem;
+  padding: 1rem 3rem 1rem 1.25rem;
+  box-shadow: 0 1rem 3rem rgba(7, 21, 47, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.install-prompt__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+}
+
+.install-prompt__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.25rem;
+}
+
+.install-prompt__body {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.install-prompt__inline-icon {
+  display: inline-block;
+  vertical-align: middle;
+  color: #ff6b13;
+}
+
+.install-prompt__arrow {
+  position: absolute;
+  bottom: -0.6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.2rem;
+  height: 0.6rem;
+  background: rgba(7, 21, 47, 0.94);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.install-prompt__btn {
+  margin-top: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ff6b13;
+  color: #fff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(1.5rem); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
