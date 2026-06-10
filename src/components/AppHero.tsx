@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const HERO_IMAGES = [
@@ -39,9 +40,9 @@ export function AppHero() {
     <div className="app-hero">
       <img src={image} alt="" className="app-hero__image" />
       <div className="app-hero__shade" />
-      <div className="app-hero__logo">
+      <Link href="/" className="app-hero__logo" aria-label="Accueil">
         <img src="/logo-100-pompes.jpg" alt="100 Pompes" className="app-hero__logo-image" />
-      </div>
+      </Link>
     </div>
   )
 }

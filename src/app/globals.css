@@ -137,6 +137,7 @@ button {
 }
 
 .app-hero__logo {
+  display: block;
   position: absolute;
   top: max(0.8rem, env(safe-area-inset-top));
   left: 1rem;
@@ -147,6 +148,7 @@ button {
   background: rgba(255, 255, 255, 0.9);
   box-shadow: 0 1rem 2rem rgba(7, 21, 47, 0.18);
   backdrop-filter: blur(12px);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app-hero__logo-image {
