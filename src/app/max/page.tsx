@@ -44,7 +44,6 @@ export default function MaxPage() {
       <div className="flex-1 px-4 py-5">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <MaxPerformanceSession
-            sensorMode={data.preferredSensorMode}
             personalBest={personalBest}
             onComplete={handleComplete}
             onAbort={() => router.back()}

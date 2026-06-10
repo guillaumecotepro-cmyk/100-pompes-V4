@@ -1,60 +1,30 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, Square, Minus, CheckCircle, Zap, Target, ChevronRight } from 'lucide-react'
+import { Play, Square, Minus, CheckCircle, Target, ChevronRight } from 'lucide-react'
 import { Button } from './ui/Button'
 import { Card } from './ui/Card'
 import { getLevelFromScore, getLevelLabel, getLevelBadgeClass } from '@/lib/utils'
 import { usePushupCounter } from '@/hooks/usePushupCounter'
 import { estimateProgramDuration } from '@/lib/programGenerator'
-import { SensorMode } from '@/types'
 
 type Phase = 'intro' | 'active' | 'done' | 'goal'
 
 const GOAL_PRESETS = [50, 75, 100, 150, 200, 300, 500]
 
-const MODE_INSTRUCTIONS: Record<SensorMode, string[]> = {
-  tap: [
-    'Mets-toi en position de pompe',
-    'Appuie sur Démarrer',
-    'Tape la zone orange à chaque pompe complète',
-    'Arrête quand tu ne peux plus',
-  ],
-  accelerometer: [
-    'Place ton téléphone sur ton dos (entre les omoplates)',
-    'Appuie sur Démarrer',
-    'Fais tes pompes — le capteur compte automatiquement',
-    'Appuie Terminer quand tu ne peux plus',
-  ],
-  camera: [
-    'Pose ton téléphone au sol sous ton visage, caméra vers le haut',
-    'Appuie sur Démarrer',
-    'Fais tes pompes — la caméra détecte chaque descente',
-    'Appuie Terminer quand tu ne peux plus',
-  ],
-  proximity: [
-    'Tiens ton téléphone verticalement, écran face à toi',
-    'Appuie sur Démarrer',
-    'Fais tes pompes — le capteur détecte ta proximité',
-    'Appuie Terminer quand tu ne peux plus',
-  ],
-}
-
 interface InitialTestProps {
-  sensorMode: SensorMode
   onComplete: (score: number, goal: number) => void
 }
 
-export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
-  const [phase, setPhase]         = useState<Phase>('intro')
-  const [elapsed, setElapsed]     = useState(0)
-  const [pulseKey, setPulseKey]   = useState(0)
+export function InitialTest({ onComplete }: InitialTestProps) {
+  const [phase, setPhase] = useState<Phase>('intro')
+  const [elapsed, setElapsed] = useState(0)
+  const [pulseKey, setPulseKey] = useState(0)
   const [displayCount, setDisplayCount] = useState(0)
-  const [goal, setGoal]           = useState(100)
+  const [goal, setGoal] = useState(100)
   const [customGoal, setCustomGoal] = useState('')
   const [showCustom, setShowCustom] = useState(false)
-  const [buttonSize, setButtonSize] = useState(224) // default 224px
-  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const startTime = useRef(0)
 
   const handleRep = (c: number) => {
@@ -63,10 +33,9 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
     if (navigator.vibrate) navigator.vibrate(25)
   }
 
-  const { addRep, reset, sensorReady } = usePushupCounter({
-    mode:   sensorMode,
+  const { addRep, decrement, reset } = usePushupCounter({
     active: phase === 'active',
-    onRep:  handleRep,
+    onRep: handleRep,
   })
 
   useEffect(() => {
@@ -79,7 +48,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
     return () => clearInterval(timerRef.current!)
   }, [phase])
 
-  // Ensure goal is always higher than score
   useEffect(() => {
     if (phase === 'goal' && goal <= displayCount) {
       const next = GOAL_PRESETS.find(g => g > displayCount) ?? displayCount + 50
@@ -87,29 +55,13 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
     }
   }, [phase, displayCount, goal])
 
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
-  }, [])
-
   const start = () => { reset(); setElapsed(0); setPhase('active') }
-  const stop  = () => { setPhase('done') }
+  const stop = () => { setPhase('done') }
 
   const formatTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
   const level = getLevelFromScore(displayCount)
-  const isTap = sensorMode === 'tap'
 
   const validPresets = GOAL_PRESETS.filter(g => g > displayCount)
   const { weeks, sessions: sessionCount } = estimateProgramDuration(displayCount, goal)
@@ -126,32 +78,20 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
   return (
     <div className="flex flex-col gap-5">
       <AnimatePresence mode="wait">
-
-        {/* ── INTRO ── */}
         {phase === 'intro' && (
           <motion.div key="intro" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 bg-brand-50 rounded-full px-3 py-1.5 self-start">
-              <Zap size={13} className="text-brand-500" />
-              <span className="text-xs font-semibold text-brand-700">
-                {sensorMode === 'tap' ? 'Tap manuel' : 
-                 sensorMode === 'accelerometer' ? 'Capteur de mouvement' : 
-                 sensorMode === 'camera' ? 'Caméra frontale' :
-                 'Capteur de proximité'}
-              </span>
-            </div>
             <Card>
-              <h2 className="font-bold text-lg text-gray-900 mb-3">Comment ça marche ?</h2>
+              <h2 className="font-bold text-lg text-gray-900 mb-3">Comment ca marche ?</h2>
               <ol className="flex flex-col gap-2 text-sm text-gray-600">
-                {MODE_INSTRUCTIONS[sensorMode].map((step, i) => (
-                  <li key={i} className="flex gap-2">
-                    <span className="text-brand-500 font-bold shrink-0">{i + 1}.</span> {step}
-                  </li>
-                ))}
+                <li className="flex gap-2"><span className="text-brand-500 font-bold shrink-0">1.</span> Mets-toi en position de pompe</li>
+                <li className="flex gap-2"><span className="text-brand-500 font-bold shrink-0">2.</span> Appuie sur Démarrer</li>
+                <li className="flex gap-2"><span className="text-brand-500 font-bold shrink-0">3.</span> Tape la grande zone orange à chaque pompe — ou touche avec le bout du nez</li>
+                <li className="flex gap-2"><span className="text-brand-500 font-bold shrink-0">4.</span> Arrête quand tu ne peux plus</li>
               </ol>
             </Card>
             <Card className="bg-amber-50 border-amber-200">
-              <p className="text-sm text-amber-800 font-medium">⚡ Donne tout — ce score calibre ton programme.</p>
+              <p className="text-sm text-amber-800 font-medium">Donne tout : ce score calibre ton programme.</p>
             </Card>
             <Button size="xl" fullWidth onClick={start}>
               <Play size={20} /> Démarrer le test
@@ -159,54 +99,58 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
           </motion.div>
         )}
 
-        {/* ── ACTIVE ── */}
+        {/* ─── FULLSCREEN ACTIVE PHASE ───────────────────────────── */}
         {phase === 'active' && (
-          <motion.div key="active" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className="flex flex-col items-center gap-4">
-            <p className="text-gray-500 text-sm font-mono">{formatTime(elapsed)}</p>
+          <motion.div
+            key="active"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-brand-500 flex flex-col"
+            style={{
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
+          >
+            {/* Timer */}
+            <div className="flex justify-center py-4">
+              <p className="text-white/60 text-sm font-mono">{formatTime(elapsed)}</p>
+            </div>
+
+            {/* Tap zone */}
             <motion.button
               key={pulseKey}
-              animate={pulseKey > 0 ? { scale: [1, 1.06, 1] } : {}}
-              transition={{ duration: 0.25 }}
-              onClick={isTap ? addRep : undefined}
-              className={`relative rounded-full shadow-2xl flex flex-col items-center justify-center select-none
-                ${isTap
-                  ? 'bg-brand-500 shadow-brand-300 active:scale-95 transition-transform cursor-pointer'
-                  : 'bg-brand-50 border-4 border-brand-200 cursor-default'}`}
-              style={{ width: buttonSize, height: buttonSize }}
+              animate={pulseKey > 0 ? { scale: [1, 1.015, 1] } : {}}
+              transition={{ duration: 0.15 }}
+              onTouchStart={(e) => { e.preventDefault(); addRep() }}
+              onClick={addRep}
+              className="flex-1 mx-3 rounded-3xl bg-white/10 flex flex-col items-center justify-center select-none relative"
+              style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
             >
-              <div className={`text-7xl font-black leading-none ${isTap ? 'text-white' : 'text-brand-600'}`}>
-                {displayCount}
-              </div>
-              <div className={`text-sm font-semibold mt-1 ${isTap ? 'text-white/70' : 'text-brand-400'}`}>
-                pompe{displayCount !== 1 ? 's' : ''}
-              </div>
-              {isTap && <div className="absolute bottom-5 text-white/60 text-xs">TAPE ICI</div>}
+              <div className="text-[100px] font-black leading-none text-white tabular-nums">{displayCount}</div>
+              <div className="text-white/50 text-base font-semibold mt-2">pompe{displayCount !== 1 ? 's' : ''}</div>
+              <div className="absolute bottom-6 text-white/30 text-xs tracking-[0.3em] uppercase">Tape ici</div>
             </motion.button>
-            {!isTap && (
-              <div className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium
-                ${sensorReady ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                <span className={`w-2 h-2 rounded-full ${sensorReady ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-                {sensorReady ? 'Capteur actif' : 'Initialisation…'}
-              </div>
-            )}
-            <div className="flex gap-3 w-full">
-              <Button variant="secondary" size="md" className="flex-1"
-                onClick={() => setDisplayCount(c => Math.max(0, c - 1))}
-                disabled={displayCount === 0}>
-                <Minus size={16} /> Corriger
-              </Button>
-              <Button variant="danger" size="md" className="flex-1" onClick={stop}>
-                <Square size={16} /> Terminer
-              </Button>
+
+            {/* Bottom controls */}
+            <div className="flex gap-3 px-4 py-3">
+              <button
+                onClick={() => decrement()}
+                disabled={displayCount === 0}
+                className="flex-1 flex items-center justify-center gap-2 bg-white/20 text-white font-semibold text-sm rounded-2xl py-4 disabled:opacity-40"
+              >
+                <Minus size={18} /> Corriger
+              </button>
+              <button
+                onClick={stop}
+                className="flex-1 flex items-center justify-center gap-2 bg-white text-brand-600 font-semibold text-sm rounded-2xl py-4"
+              >
+                <Square size={18} /> Terminer
+              </button>
             </div>
-            <p className="text-xs text-gray-400 text-center">
-              {isTap ? "Tape la zone orange à chaque pompe complète" : "Le capteur compte automatiquement"}
-            </p>
           </motion.div>
         )}
 
-        {/* ── DONE ── */}
         {phase === 'done' && (
           <motion.div key="done" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center gap-5 text-center">
@@ -223,11 +167,11 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
             </div>
             <Card className="w-full text-left bg-gray-50">
               <p className="text-sm text-gray-600">
-                {displayCount === 0 && "Pas de souci ! Ton programme débutera tout doucement."}
-                {displayCount > 0  && displayCount < 10  && "Parfait pour débuter ! On va construire une base solide."}
-                {displayCount >= 10 && displayCount < 26 && "Bonne base ! Tu vas progresser vite."}
-                {displayCount >= 26 && displayCount < 51 && "Impressionnant ! Les grandes performances se profilent."}
-                {displayCount >= 51 && "Niveau élite. Le programme sera à la hauteur."}
+                {displayCount === 0 && 'Pas de souci ! Ton programme débutera tout doucement.'}
+                {displayCount > 0 && displayCount < 10 && 'Parfait pour débuter ! On va construire une base solide.'}
+                {displayCount >= 10 && displayCount < 26 && 'Bonne base ! Tu vas progresser vite.'}
+                {displayCount >= 26 && displayCount < 51 && 'Impressionnant ! Les grandes performances se profilent.'}
+                {displayCount >= 51 && 'Niveau élite. Le programme sera à la hauteur.'}
               </p>
             </Card>
             <Button size="xl" fullWidth onClick={() => setPhase('goal')}>
@@ -236,7 +180,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
           </motion.div>
         )}
 
-        {/* ── GOAL SELECTION ── */}
         {phase === 'goal' && (
           <motion.div key="goal" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             className="flex flex-col gap-5">
@@ -249,7 +192,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
               <p className="text-sm text-gray-500">Combien de pompes d'affilée veux-tu réussir ?</p>
             </div>
 
-            {/* Presets */}
             <div className="flex flex-wrap gap-2">
               {validPresets.map(g => (
                 <button key={g}
@@ -260,7 +202,7 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
                       : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'}`}
                 >
                   {g}
-                  {g === 100 && <span className="ml-1 text-xs opacity-70">⭐</span>}
+                  {g === 100 && <span className="ml-1 text-xs opacity-70">*</span>}
                 </button>
               ))}
               <button
@@ -268,11 +210,10 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
                 className={`px-4 py-2.5 rounded-2xl text-sm font-bold border-2 transition-all
                   ${showCustom ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-500'}`}
               >
-                Autre…
+                Autre...
               </button>
             </div>
 
-            {/* Custom input */}
             <AnimatePresence>
               {showCustom && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
@@ -291,7 +232,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
               )}
             </AnimatePresence>
 
-            {/* Estimation card */}
             <motion.div key={`${goal}-est`} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
               <Card className="bg-gradient-to-r from-brand-50 to-orange-50 border-brand-200">
                 <div className="flex items-start gap-3">
@@ -310,13 +250,10 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
                         <p className="text-xs text-brand-600">séances</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-black text-brand-700">3×</p>
+                        <p className="text-2xl font-black text-brand-700">3x</p>
                         <p className="text-xs text-brand-600">par semaine</p>
                       </div>
                     </div>
-                    <p className="text-xs text-brand-600 mt-2 opacity-80">
-                      Estimation basée sur ton niveau actuel. Le programme s'adapte à ta progression réelle.
-                    </p>
                   </div>
                 </div>
               </Card>
@@ -327,7 +264,6 @@ export function InitialTest({ sensorMode, onComplete }: InitialTestProps) {
             </Button>
           </motion.div>
         )}
-
       </AnimatePresence>
     </div>
   )

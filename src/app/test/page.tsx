@@ -30,7 +30,7 @@ function TestPageInner() {
         </div>
       </div>
       <div className="flex-1 px-4 pb-8">
-        <InitialTest sensorMode={data.preferredSensorMode} onComplete={handleComplete} />
+        <InitialTest onComplete={handleComplete} />
       </div>
     </div>
   )

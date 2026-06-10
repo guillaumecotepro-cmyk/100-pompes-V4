@@ -56,7 +56,6 @@ export default function WorkoutPage() {
             className="flex-1 flex flex-col pt-14 px-4 pb-6 safe-bottom">
             <ActiveWorkout
               session={session}
-              sensorMode={data.preferredSensorMode}
               onComplete={handleWorkoutComplete}
               onAbort={() => router.back()}
             />

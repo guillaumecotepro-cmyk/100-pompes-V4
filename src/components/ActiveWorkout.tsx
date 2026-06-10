@@ -1,11 +1,10 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Pause, Play, Minus, X, Zap, ChevronRight } from 'lucide-react'
+import { Pause, Play, X, ChevronRight } from 'lucide-react'
 import { Button } from './ui/Button'
-import { Card } from './ui/Card'
 import { Progress } from './ui/Progress'
-import { SensorMode, ProgramSession, CompletedSet, WorkoutPhase, RhythmQuality } from '@/types'
+import { ProgramSession, CompletedSet, WorkoutPhase, RhythmQuality } from '@/types'
 import { usePushupCounter } from '@/hooks/usePushupCounter'
 import { useVibration } from '@/hooks/useVibration'
 import { formatDuration } from '@/lib/utils'
@@ -13,19 +12,18 @@ import { getRandomRestMessage } from '@/lib/motivation'
 
 interface ActiveWorkoutProps {
   session: ProgramSession
-  sensorMode: SensorMode
   onComplete: (sets: CompletedSet[], duration: number) => void
   onAbort: () => void
 }
 
 const RHYTHM_LABELS: Record<RhythmQuality, { label: string; color: string }> = {
-  idle:  { label: 'Prêt',       color: 'text-gray-400' },
-  good:  { label: 'Bon rythme', color: 'text-emerald-500' },
-  fast:  { label: 'Rapide !',   color: 'text-brand-500' },
-  slow:  { label: 'Lentement',  color: 'text-blue-500' },
+  idle:  { label: 'Prêt',       color: 'text-white/60' },
+  good:  { label: 'Bon rythme', color: 'text-emerald-300' },
+  fast:  { label: 'Rapide !',   color: 'text-yellow-300' },
+  slow:  { label: 'Lentement',  color: 'text-blue-300' },
 }
 
-export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: ActiveWorkoutProps) {
+export function ActiveWorkout({ session, onComplete, onAbort }: ActiveWorkoutProps) {
   const [phase, setPhase]           = useState<WorkoutPhase>('preparing')
   const [currentSet, setCurrentSet] = useState(0)
   const [completedSets, setCompletedSets] = useState<CompletedSet[]>([])
@@ -34,7 +32,6 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
   const [pulseKey, setPulseKey]     = useState(0)
   const [restMsg]                   = useState(getRandomRestMessage)
   const [totalElapsed, setTotalElapsed] = useState(0)
-  const [buttonSize, setButtonSize] = useState(208) // default 208px
   const workoutStart = useRef(Date.now())
   const totalTimer   = useRef<ReturnType<typeof setInterval>>()
   const restTimer    = useRef<ReturnType<typeof setInterval>>()
@@ -47,16 +44,14 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
   const handleRep = useCallback((count: number) => {
     setPulseKey(k => k + 1)
     vibrateRep()
-    // Auto-complete set if target reached
     if (targetSet && count >= targetSet.reps) {
       finishSet(count)
     }
   }, [targetSet, vibrateRep])
 
-  const { count, rhythmQuality, sensorReady, addRep, reset } =
-    usePushupCounter({ mode: sensorMode, active: phase === 'active', onRep: handleRep })
+  const { count, rhythmQuality, addRep, reset } =
+    usePushupCounter({ active: phase === 'active', onRep: handleRep })
 
-  // Total elapsed timer
   useEffect(() => {
     totalTimer.current = setInterval(() => {
       setTotalElapsed(Math.floor((Date.now() - workoutStart.current) / 1000))
@@ -64,22 +59,6 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
     return () => clearInterval(totalTimer.current)
   }, [])
 
-  // Calculate button size for 90% screen area
-  useEffect(() => {
-    const calculateButtonSize = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const screenArea = width * height
-      const buttonArea = 0.9 * screenArea
-      const size = Math.sqrt(buttonArea)
-      setButtonSize(Math.min(size, Math.min(width * 0.95, height * 0.95))) // cap at 95% to leave some margin
-    }
-    calculateButtonSize()
-    window.addEventListener('resize', calculateButtonSize)
-    return () => window.removeEventListener('resize', calculateButtonSize)
-  }, [])
-
-  // Rest countdown
   useEffect(() => {
     if (phase !== 'resting') { clearInterval(restTimer.current); return }
     restTimer.current = setInterval(() => {
@@ -143,33 +122,35 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs text-gray-400">Séance {session.index + 1} · Semaine {session.week}</p>
-          <p className="font-semibold text-gray-800">{session.focus}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-gray-400">{formatDuration(totalElapsed)}</p>
-          <p className="text-sm font-medium text-gray-600">{doneReps + count}/{totalTarget}</p>
-        </div>
-      </div>
+      {/* Header — hidden during active (fullscreen takes over) */}
+      {phase !== 'active' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-xs text-gray-400">Séance {session.index + 1} · Semaine {session.week}</p>
+              <p className="font-semibold text-gray-800">{session.focus}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-gray-400">{formatDuration(totalElapsed)}</p>
+              <p className="text-sm font-medium text-gray-600">{doneReps + count}/{totalTarget}</p>
+            </div>
+          </div>
 
-      <Progress value={progressPct} height="sm" className="mb-4" />
+          <Progress value={progressPct} height="sm" className="mb-4" />
 
-      {/* Set indicators */}
-      <div className="flex gap-1.5 justify-center mb-5">
-        {session.sets.map((s, i) => (
-          <div key={i}
-            className={`h-2 rounded-full flex-1 max-w-12 transition-colors ${
-              i < currentSet ? 'bg-brand-500' :
-              i === currentSet ? 'bg-brand-300' : 'bg-gray-200'
-            }`}
-          />
-        ))}
-      </div>
+          <div className="flex gap-1.5 justify-center mb-5">
+            {session.sets.map((s, i) => (
+              <div key={i}
+                className={`h-2 rounded-full flex-1 max-w-12 transition-colors ${
+                  i < currentSet ? 'bg-brand-500' :
+                  i === currentSet ? 'bg-brand-300' : 'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
-      {/* Main area */}
       <AnimatePresence mode="wait">
         {phase === 'preparing' && (
           <motion.div key="prep" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -185,61 +166,62 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
           </motion.div>
         )}
 
+        {/* ─── FULLSCREEN ACTIVE PHASE ───────────────────────────── */}
         {phase === 'active' && (
-          <motion.div key="active" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-            className="flex-1 flex flex-col items-center justify-center gap-4">
-
-            {/* Rhythm indicator */}
-            <p className={`text-sm font-medium ${rhythmInfo.color}`}>{rhythmInfo.label}</p>
-
-            {/* Counter + tap zone */}
-            <motion.button
-              key={pulseKey}
-              animate={pulseKey > 0 ? { scale: [1, 1.07, 1] } : {}}
-              transition={{ duration: 0.25 }}
-              onClick={() => sensorMode === 'tap' ? addRep() : undefined}
-              className={`relative rounded-full flex flex-col items-center justify-center select-none
-                ${sensorMode === 'tap' ? 'bg-brand-500 shadow-2xl shadow-brand-300 active:scale-95 transition-transform cursor-pointer' : 'bg-brand-50 border-4 border-brand-200'}`}
-              style={{ width: buttonSize, height: buttonSize }}
-            >
-              <div className={`text-8xl font-black leading-none ${sensorMode === 'tap' ? 'text-white' : 'text-brand-600'}`}>
-                {count}
+          <motion.div
+            key="active"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-brand-500 flex flex-col"
+            style={{
+              paddingTop: 'env(safe-area-inset-top)',
+              paddingBottom: 'env(safe-area-inset-bottom)',
+            }}
+          >
+            {/* Compact info bar */}
+            <div className="flex justify-between items-center px-5 pt-3 pb-2">
+              <div>
+                <p className="text-xs text-white/50">Série {currentSet + 1}/{session.sets.length}</p>
+                <p className="text-sm font-bold text-white/80">{doneReps + count}/{totalTarget}</p>
               </div>
-              <div className={`text-sm font-medium mt-1 ${sensorMode === 'tap' ? 'text-white/70' : 'text-brand-400'}`}>
-                / {targetSet?.reps}
+              <p className={`text-sm font-semibold ${rhythmInfo.label === 'Prêt' ? 'text-white/50' : rhythmInfo.color}`}>
+                {rhythmInfo.label}
+              </p>
+              <div className="text-right">
+                <p className="text-xs text-white/50 font-mono">{formatDuration(totalElapsed)}</p>
+                <p className="text-sm font-bold text-white/80">/{targetSet?.reps}</p>
               </div>
-              {sensorMode === 'tap' && (
-                <div className="absolute bottom-5 text-white/60 text-xs">TAPE ICI</div>
-              )}
-            </motion.button>
-
-            {sensorMode !== 'tap' && (
-              <div className="flex items-center gap-2 bg-brand-50 rounded-full px-4 py-1.5">
-                <Zap size={14} className="text-brand-500" />
-                <span className="text-xs text-brand-700 font-medium">
-                  {sensorMode === 'accelerometer' ? 'Capteur actif' : 
-                   sensorMode === 'camera' ? 'Caméra active' :
-                   'Proximité active'}
-                </span>
-              </div>
-            )}
-
-            <div className="flex gap-3">
-              <Button variant="secondary" size="sm" onClick={() => addRep()}>
-                +1 Manuel
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => { /* noop, subtract handled separately */ }}>
-                <Minus size={14} /> {count > 0 ? <span onClick={(e) => { e.stopPropagation() }} /> : null}
-              </Button>
             </div>
 
-            <div className="flex gap-3 w-full">
-              <Button variant="secondary" size="md" className="flex-1" onClick={() => setPhase('paused')}>
-                <Pause size={16} /> Pause
-              </Button>
-              <Button size="md" className="flex-1" onClick={() => finishSet()}>
-                Terminer série <ChevronRight size={16} />
-              </Button>
+            {/* Tap zone — fills ~80% of screen */}
+            <motion.button
+              key={pulseKey}
+              animate={pulseKey > 0 ? { scale: [1, 1.015, 1] } : {}}
+              transition={{ duration: 0.15 }}
+              onTouchStart={(e) => { e.preventDefault(); addRep() }}
+              onClick={addRep}
+              className="flex-1 mx-3 rounded-3xl bg-white/10 flex flex-col items-center justify-center select-none relative"
+              style={{ touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+            >
+              <div className="text-[100px] font-black leading-none text-white tabular-nums">{count}</div>
+              <div className="text-white/40 text-xs tracking-[0.3em] uppercase mt-4">Tape ici</div>
+            </motion.button>
+
+            {/* Bottom controls */}
+            <div className="flex gap-3 px-4 py-3">
+              <button
+                onClick={() => setPhase('paused')}
+                className="flex-1 flex items-center justify-center gap-2 bg-white/20 text-white font-semibold text-sm rounded-2xl py-4"
+              >
+                <Pause size={18} /> Pause
+              </button>
+              <button
+                onClick={() => finishSet()}
+                className="flex-1 flex items-center justify-center gap-2 bg-white text-brand-600 font-semibold text-sm rounded-2xl py-4"
+              >
+                Fin série <ChevronRight size={18} />
+              </button>
             </div>
           </motion.div>
         )}
@@ -288,7 +270,6 @@ export function ActiveWorkout({ session, sensorMode, onComplete, onAbort }: Acti
         )}
       </AnimatePresence>
 
-      {/* Bottom abort */}
       {(phase === 'preparing' || phase === 'resting') && (
         <button onClick={onAbort} className="mt-4 text-center text-xs text-gray-400 py-2">
           Abandonner la séance
