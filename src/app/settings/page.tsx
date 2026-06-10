@@ -1,7 +1,8 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, AlertTriangle, RefreshCw } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, Info } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -33,13 +34,27 @@ export default function SettingsPage() {
         {/* About */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">À propos</p>
-          <Card>
-            <div className="flex flex-col gap-1 text-sm text-gray-600">
-              <p><span className="font-semibold text-gray-900">100 Pompes</span> <span className="text-brand-500 font-semibold">v1.0.0</span></p>
-              <p className="text-xs text-gray-400 mt-1">Comptage par tap — touchez l'écran ou le bout du nez à chaque pompe.</p>
-              <p className="text-xs text-gray-400">Données stockées localement. Aucune connexion requise.</p>
-            </div>
-          </Card>
+          <div className="flex flex-col gap-2">
+            <Card>
+              <div className="flex flex-col gap-1 text-sm text-gray-600">
+                <p><span className="font-semibold text-gray-900">100 Pompes</span> <span className="text-brand-500 font-semibold">v1.0.0</span></p>
+                <p className="text-xs text-gray-400 mt-1">Comptage par tap — touchez l'écran ou le bout du nez à chaque pompe.</p>
+                <p className="text-xs text-gray-400">Données stockées localement. Aucune connexion requise.</p>
+              </div>
+            </Card>
+            <Link href="/about">
+              <Card className="flex items-center gap-3 hover:bg-gray-50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                  <Info size={18} className="text-brand-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900 text-sm">En savoir +</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Fonctionnement complet de l'application</p>
+                </div>
+                <ChevronRight size={16} className="text-gray-300" />
+              </Card>
+            </Link>
+          </div>
         </div>
 
         {/* Danger zone */}

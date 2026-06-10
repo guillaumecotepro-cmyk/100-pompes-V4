@@ -3,15 +3,15 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { ChevronRight, Zap, Target, TrendingUp, Smartphone } from 'lucide-react'
+import { ChevronRight, Zap, Target, TrendingUp, Smartphone, Info } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { useAppData } from '@/hooks/useWorkoutProgram'
 
 const FEATURES = [
-  { Icon: Target,     title: 'Test initial',         desc: 'Évalue ton niveau et reçois un programme sur mesure.' },
-  { Icon: Zap,        title: 'Comptage automatique',  desc: 'Caméra, proximité ou tap — tu choisis.' },
-  { Icon: TrendingUp, title: 'Progression visuelle',  desc: 'Suivi complet, badges, streaks et statistiques.' },
+  { Icon: Target,     title: 'Test initial',         desc: 'Évalue ton niveau et reçois un programme personnalisé.' },
+  { Icon: Zap,        title: 'Comptage par le nez',   desc: 'Chaque pompe se valide en touchant l\'écran avec le bout du nez.' },
+  { Icon: TrendingUp, title: 'Progression visuelle',  desc: 'Suivi complet, badges, records et statistiques.' },
   { Icon: Smartphone, title: 'Conçu pour l\'iPhone',  desc: 'Mobile-first, rapide, sans connexion requise.' },
 ]
 
@@ -97,6 +97,26 @@ export default function LandingPage() {
             </Card>
           </motion.div>
         ))}
+
+        {/* En savoir + */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.1 }}
+        >
+          <Link href="/about">
+            <Card className="flex items-center gap-3 border-brand-100 bg-brand-50 hover:bg-brand-100 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center shrink-0">
+                <Info size={18} className="text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-brand-900 text-sm">En savoir +</p>
+                <p className="text-xs text-brand-600 mt-0.5">Comment fonctionne l'app en détail</p>
+              </div>
+              <ChevronRight size={16} className="text-brand-400" />
+            </Card>
+          </Link>
+        </motion.div>
       </motion.div>
     </main>
   )
