@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 const HERO_IMAGES = [
@@ -8,6 +9,15 @@ const HERO_IMAGES = [
   '/hero/pushup-3.webp',
   '/hero/pushup-4.png',
   '/hero/pushup-5.png',
+]
+
+// Pool Gainage : une image est tirée au hasard à chaque écran (voir getGainageHeroImage).
+const GAINAGE_HERO_IMAGES = [
+  '/hero/gainage-hero-1.webp',
+  '/hero/gainage-hero-2.webp',
+  '/hero/gainage-hero-3.jpg',
+  '/hero/gainage-hero-4.jpg',
+  '/hero/gainage-hero-5.jpg',
 ]
 
 const PAGE_IMAGE_INDEX: Record<string, number> = {
@@ -32,14 +42,34 @@ function getHeroImage(pathname: string) {
   return HERO_IMAGES[PAGE_IMAGE_INDEX[key ?? '/'] ?? 0]
 }
 
+function pickRandomGainageHero() {
+  return GAINAGE_HERO_IMAGES[Math.floor(Math.random() * GAINAGE_HERO_IMAGES.length)]
+}
+
+// Choix déterministe (même résultat serveur/client) pour le tout premier rendu :
+// Math.random() y produirait des valeurs différentes entre le serveur et le
+// client et déclencherait un mismatch d'hydratation React.
+function deterministicGainageHero(pathname: string) {
+  let hash = 0
+  for (let i = 0; i < pathname.length; i++) hash = (hash * 31 + pathname.charCodeAt(i)) >>> 0
+  return GAINAGE_HERO_IMAGES[hash % GAINAGE_HERO_IMAGES.length]
+}
+
 export function AppHero() {
   const pathname = usePathname()
   const isGainage = pathname === '/gainage' || pathname.startsWith('/gainage/')
+  const [gainageHero, setGainageHero] = useState(() => deterministicGainageHero(pathname))
+
+  // Une fois monté côté client (hydratation terminée), on retire une image
+  // vraiment aléatoire à chaque écran visité.
+  useEffect(() => {
+    setGainageHero(pickRandomGainageHero())
+  }, [pathname])
 
   return (
     <div className="app-hero">
       {isGainage ? (
-        <div className="app-hero__image app-hero__image--gainage" />
+        <img src={gainageHero} alt="" className="app-hero__image" />
       ) : (
         <img src={getHeroImage(pathname)} alt="" className="app-hero__image" />
       )}
