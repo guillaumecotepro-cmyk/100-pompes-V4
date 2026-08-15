@@ -1,25 +1,39 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Play, TrendingUp, User } from 'lucide-react'
+import { LayoutDashboard, Play, TrendingUp, User, History, Award } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
-const NAV_ITEMS = [
+const POMPES_NAV_ITEMS = [
   { href: '/dashboard', label: 'Accueil',    Icon: LayoutDashboard },
   { href: '/workout',   label: 'Séance',     Icon: Play },
   { href: '/progress',  label: 'Progression',Icon: TrendingUp },
   { href: '/profile',   label: 'Profil',     Icon: User },
 ]
 
-export function Navigation() {
+const GAINAGE_NAV_ITEMS = [
+  { href: '/gainage',         label: 'Accueil',    Icon: LayoutDashboard },
+  { href: '/gainage/free',    label: 'Libre',      Icon: Play },
+  { href: '/gainage/history', label: 'Historique', Icon: History },
+  { href: '/gainage/badges',  label: 'Badges',     Icon: Award },
+]
+
+interface NavigationProps {
+  /** 'pompes' (défaut, comportement historique inchangé) ou 'gainage'. */
+  space?: 'pompes' | 'gainage'
+}
+
+export function Navigation({ space = 'pompes' }: NavigationProps) {
   const pathname = usePathname()
+  const NAV_ITEMS = space === 'gainage' ? GAINAGE_NAV_ITEMS : POMPES_NAV_ITEMS
 
   return (
     <nav className="bottom-nav fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100">
       <div className="grid grid-cols-4 max-w-md mx-auto">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + '/')
+          const isRoot = href === '/dashboard' || href === '/gainage'
+          const active = pathname === href || (!isRoot && pathname.startsWith(href + '/'))
           return (
             <Link key={href} href={href}
               className={cn(

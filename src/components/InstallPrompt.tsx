@@ -82,7 +82,7 @@ export function InstallPrompt() {
           <p className="install-prompt__title">Plein écran sans barre</p>
           <p className="install-prompt__body">
             Appuie sur <Share size={14} className="install-prompt__inline-icon" /> puis{' '}
-            <strong>« Sur l'écran d'accueil »</strong> pour une expérience plein écran.
+            <strong>« Sur l&apos;écran d&apos;accueil »</strong> pour une expérience plein écran.
           </p>
           <div className="install-prompt__arrow" />
         </>
@@ -90,10 +90,10 @@ export function InstallPrompt() {
 
       {platform === 'android' && (
         <>
-          <p className="install-prompt__title">Installer l'application</p>
-          <p className="install-prompt__body">Lance l'app en plein écran depuis ton écran d'accueil.</p>
+          <p className="install-prompt__title">Installer l&apos;application</p>
+          <p className="install-prompt__body">Lance l&apos;app en plein écran depuis ton écran d&apos;accueil.</p>
           <button onClick={installAndroid} className="install-prompt__btn">
-            <Plus size={16} /> Ajouter à l'écran d'accueil
+            <Plus size={16} /> Ajouter à l&apos;écran d&apos;accueil
           </button>
         </>
       )}

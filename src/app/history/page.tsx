@@ -34,7 +34,7 @@ export default function HistoryPage() {
         {history.length === 0 ? (
           <Card className="text-center py-12">
             <p className="text-4xl mb-3">📭</p>
-            <p className="text-gray-500">Aucune séance pour l'instant.</p>
+            <p className="text-gray-500">Aucune séance pour l&apos;instant.</p>
             <p className="text-sm text-gray-400 mt-1">Lance ta première séance !</p>
           </Card>
         ) : (

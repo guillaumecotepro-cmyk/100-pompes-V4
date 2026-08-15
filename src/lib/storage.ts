@@ -1,7 +1,9 @@
 import { AppData, UserStats, WorkoutHistory } from '@/types'
 import { ALL_BADGES } from './programGenerator'
+import { migrateGainageData, DEFAULT_GAINAGE_DATA } from './plank/defaults'
+import { pickNewlyUnlocked } from './utils'
 
-export const STORAGE_SCHEMA_VERSION = 2
+export const STORAGE_SCHEMA_VERSION = 3
 export const STORAGE_KEY = '100pompes_v1'
 export const STORAGE_BACKUP_KEY = '100pompes_v1_backup'
 export const LEGACY_STORAGE_KEYS = ['100pompes_data']
@@ -28,6 +30,7 @@ export const DEFAULT_APP_DATA: AppData = {
   earnedBadges: [],
   onboarded: false,
   preferredSensorMode: 'tap',
+  gainage: DEFAULT_GAINAGE_DATA,
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,6 +57,7 @@ export function migrateAppData(raw: unknown): AppData {
     earnedBadges: Array.isArray(candidate.earnedBadges) ? candidate.earnedBadges as string[] : [],
     onboarded: candidate.onboarded === true,
     preferredSensorMode: 'tap',
+    gainage: migrateGainageData(candidate.gainage),
   }
 }
 
@@ -124,28 +128,21 @@ export function updateStats(
 }
 
 export function checkNewBadges(data: AppData): string[] {
-  const earned = new Set(data.earnedBadges)
-  const newBadges: string[] = []
   const stats = data.stats
-
-  const check = (id: string, condition: boolean) => {
-    if (condition && !earned.has(id)) newBadges.push(id)
-  }
-
-  check('first_session',  stats.totalSessions >= 1)
-  check('streak_3',       stats.currentStreak >= 3)
-  check('streak_7',       stats.currentStreak >= 7)
-  check('streak_30',      stats.currentStreak >= 30)
-  check('score_10',       (data.profile?.initialTestScore ?? 0) >= 10)
-  check('score_25',       (data.profile?.initialTestScore ?? 0) >= 25)
-  check('score_50',       (data.profile?.initialTestScore ?? 0) >= 50)
-  check('total_100',      stats.totalPushups >= 100)
-  check('total_1000',     stats.totalPushups >= 1_000)
-  check('total_10000',    stats.totalPushups >= 10_000)
-  check('session_10',     stats.totalSessions >= 10)
-  check('goal_100',       stats.bestSingleSet >= 100)
-
-  return newBadges
+  return pickNewlyUnlocked(data.earnedBadges, {
+    first_session: stats.totalSessions >= 1,
+    streak_3:      stats.currentStreak >= 3,
+    streak_7:      stats.currentStreak >= 7,
+    streak_30:     stats.currentStreak >= 30,
+    score_10:      (data.profile?.initialTestScore ?? 0) >= 10,
+    score_25:      (data.profile?.initialTestScore ?? 0) >= 25,
+    score_50:      (data.profile?.initialTestScore ?? 0) >= 50,
+    total_100:     stats.totalPushups >= 100,
+    total_1000:    stats.totalPushups >= 1_000,
+    total_10000:   stats.totalPushups >= 10_000,
+    session_10:    stats.totalSessions >= 10,
+    goal_100:      stats.bestSingleSet >= 100,
+  })
 }
 
 function isConsecutiveDay(date1: string, date2: string): boolean {

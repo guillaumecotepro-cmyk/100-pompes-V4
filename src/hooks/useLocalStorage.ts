@@ -48,7 +48,11 @@ export function useLocalStorage<T>(
       return initialValue
     }
   })
-  const [hydrated, setHydrated] = useState(() => typeof window !== 'undefined')
+  // Toujours false au premier rendu, même côté client : le premier rendu client
+  // (hydratation) doit produire exactement le même arbre que le serveur, sinon
+  // React détecte un mismatch. Le flip à true se fait dans l'effet ci-dessous,
+  // qui ne s'exécute qu'après que le DOM hydraté correspond au HTML serveur.
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     if (hydrated) return

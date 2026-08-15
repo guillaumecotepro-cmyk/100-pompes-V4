@@ -43,7 +43,7 @@ export function SensorCalibration({ onComplete }: SensorCalibrationProps) {
           <div>
             <p className="font-semibold text-brand-900 text-sm">Tap manuel</p>
             <p className="text-xs text-brand-700 mt-0.5">
-              Touchez l'écran à chaque pompe complète — avec le doigt ou le bout du nez.
+              Touchez l&apos;écran à chaque pompe complète — avec le doigt ou le bout du nez.
             </p>
           </div>
         </div>

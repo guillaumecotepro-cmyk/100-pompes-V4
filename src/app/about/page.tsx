@@ -122,11 +122,11 @@ export default function AboutPage() {
           <div className="rounded-3xl bg-gradient-to-br from-brand-500 to-orange-400 p-6 text-white shadow-xl shadow-orange-200">
             <div className="text-4xl font-black leading-tight mb-2">
               De 0 à 100 pompes<br />
-              <span className="text-white/70">d'affilée.</span>
+              <span className="text-white/70">d&apos;affilée.</span>
             </div>
             <p className="text-white/80 text-sm leading-relaxed">
               Un programme progressif, un comptage par le nez, et une envie de progresser.
-              C'est tout ce qu'il faut.
+              C&apos;est tout ce qu&apos;il faut.
             </p>
           </div>
         </motion.div>

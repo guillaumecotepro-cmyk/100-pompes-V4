@@ -37,7 +37,7 @@ export default function MaxPage() {
         </button>
         <div>
           <h1 className="font-black text-xl text-gray-900">Performance Max</h1>
-          <p className="text-xs text-gray-500">Maximum de pompes d'affilée sans repos</p>
+          <p className="text-xs text-gray-500">Maximum de pompes d&apos;affilée sans repos</p>
         </div>
       </div>
 

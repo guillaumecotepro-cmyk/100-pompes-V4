@@ -1,7 +1,10 @@
+import { GainageData } from './plank'
+
 export type Level = 'beginner' | 'intermediate' | 'advanced' | 'elite'
 export type SensorMode = 'tap'
 export type RhythmQuality = 'fast' | 'good' | 'slow' | 'idle'
 export type WorkoutPhase = 'preparing' | 'active' | 'resting' | 'completed' | 'paused'
+export type ActivityType = 'pompes' | 'gainage'
 
 export interface UserProfile {
   id: string
@@ -85,6 +88,7 @@ export interface AppData {
   earnedBadges: string[]
   onboarded: boolean
   preferredSensorMode: SensorMode
+  gainage: GainageData
 }
 
 export interface Badge {

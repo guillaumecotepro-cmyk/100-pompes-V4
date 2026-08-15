@@ -58,7 +58,7 @@ export function ProgressDashboard({ data }: ProgressDashboardProps) {
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-xs text-gray-500">Objectif programme</p>
-            <p className="font-bold text-gray-900">100 Pompes d'affilée</p>
+            <p className="font-bold text-gray-900">100 Pompes d&apos;affilée</p>
           </div>
           <span className="text-2xl font-black text-brand-500">{progressPct}%</span>
         </div>

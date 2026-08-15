@@ -74,7 +74,7 @@ export function MaxPerformanceSession({ personalBest, onComplete, onAbort }: Max
               <ul className="text-sm text-gray-600 flex flex-col gap-1.5">
                 <li className="flex gap-2"><span className="text-brand-500 font-bold">1.</span> Mets-toi en position</li>
                 <li className="flex gap-2"><span className="text-brand-500 font-bold">2.</span> Appuie sur Démarrer</li>
-                <li className="flex gap-2"><span className="text-brand-500 font-bold">3.</span> Tape l'écran à chaque pompe — ou touche avec le bout du nez</li>
+                <li className="flex gap-2"><span className="text-brand-500 font-bold">3.</span> Tape l&apos;écran à chaque pompe — ou touche avec le bout du nez</li>
                 <li className="flex gap-2"><span className="text-brand-500 font-bold">4.</span> Arrête quand tu ne peux plus</li>
               </ul>
             </Card>
@@ -90,7 +90,7 @@ export function MaxPerformanceSession({ personalBest, onComplete, onAbort }: Max
             )}
 
             <Button size="xl" fullWidth onClick={start}>
-              <Play size={20} /> C'est parti !
+              <Play size={20} /> C&apos;est parti !
             </Button>
             <button onClick={onAbort} className="text-center text-sm text-gray-400 py-1">Annuler</button>
           </motion.div>
@@ -175,7 +175,7 @@ export function MaxPerformanceSession({ personalBest, onComplete, onAbort }: Max
             <Card elevated className="w-full py-6">
               <p className="text-gray-400 text-sm mb-1">Résultat</p>
               <div className="text-7xl font-black text-brand-500">{displayCount}</div>
-              <p className="text-gray-500 mt-1">pompe{displayCount !== 1 ? 's' : ''} d'affilée</p>
+              <p className="text-gray-500 mt-1">pompe{displayCount !== 1 ? 's' : ''} d&apos;affilée</p>
               <p className="text-xs text-gray-400 mt-2">{formatDuration(elapsed)}</p>
             </Card>
 

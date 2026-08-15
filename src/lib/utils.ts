@@ -89,3 +89,16 @@ export function progressToGoal(total: number, goal = 100): number {
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
 }
+
+/**
+ * Moteur de badges générique : retourne les ids nouvellement débloqués
+ * parmi `conditions`, en excluant ceux déjà présents dans `earned`.
+ * Partagé par Pompes et Gainage — chaque module garde ses propres ids et
+ * seuils, seul le mécanisme de sélection est mutualisé.
+ */
+export function pickNewlyUnlocked(earned: string[], conditions: Record<string, boolean>): string[] {
+  const earnedSet = new Set(earned)
+  return Object.entries(conditions)
+    .filter(([id, met]) => met && !earnedSet.has(id))
+    .map(([id]) => id)
+}

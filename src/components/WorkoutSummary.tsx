@@ -50,7 +50,7 @@ export function WorkoutSummary({
       <Card elevated className="text-center py-6">
         <div className="text-6xl font-black text-brand-500">{totalReps}</div>
         <div className="text-gray-500 text-sm mt-1">pompes réalisées</div>
-        <div className="mt-2 text-xs text-gray-400">{completion}% de l'objectif</div>
+        <div className="mt-2 text-xs text-gray-400">{completion}% de l&apos;objectif</div>
       </Card>
 
       {/* Detail stats */}

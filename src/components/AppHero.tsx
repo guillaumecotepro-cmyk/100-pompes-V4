@@ -34,13 +34,18 @@ function getHeroImage(pathname: string) {
 
 export function AppHero() {
   const pathname = usePathname()
-  const image = getHeroImage(pathname)
+  const isGainage = pathname === '/gainage' || pathname.startsWith('/gainage/')
 
   return (
     <div className="app-hero">
-      <img src={image} alt="" className="app-hero__image" />
+      {isGainage ? (
+        <div className="app-hero__image app-hero__image--gainage" />
+      ) : (
+        <img src={getHeroImage(pathname)} alt="" className="app-hero__image" />
+      )}
       <div className="app-hero__shade" />
-      <Link href="/" className="app-hero__logo" aria-label="Accueil">
+      {/* Lien logo présent sur toutes les pages : moyen unique et cohérent de revenir au choix d'activité. */}
+      <Link href="/" className="app-hero__logo" aria-label="Changer d'activité">
         <img src="/logo-100-pompes.jpg" alt="100 Pompes" className="app-hero__logo-image" />
       </Link>
     </div>

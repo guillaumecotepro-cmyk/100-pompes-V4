@@ -160,7 +160,7 @@ export function InitialTest({ onComplete }: InitialTestProps) {
             <div>
               <p className="text-gray-500 mb-1 text-sm">Ton score</p>
               <div className="text-7xl font-black text-gray-900">{displayCount}</div>
-              <p className="text-gray-500 mt-1">pompe{displayCount !== 1 ? 's' : ''} d'affilée</p>
+              <p className="text-gray-500 mt-1">pompe{displayCount !== 1 ? 's' : ''} d&apos;affilée</p>
             </div>
             <div className={`px-4 py-1.5 rounded-full text-sm font-semibold ${getLevelBadgeClass(level)}`}>
               {getLevelLabel(level)}
@@ -189,7 +189,7 @@ export function InitialTest({ onComplete }: InitialTestProps) {
 
             <div>
               <h2 className="text-2xl font-black text-gray-900 mb-1">Quel est ton objectif ?</h2>
-              <p className="text-sm text-gray-500">Combien de pompes d'affilée veux-tu réussir ?</p>
+              <p className="text-sm text-gray-500">Combien de pompes d&apos;affilée veux-tu réussir ?</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -238,7 +238,7 @@ export function InitialTest({ onComplete }: InitialTestProps) {
                   <Target size={22} className="text-brand-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-brand-900 text-base">
-                      Objectif : {goal} pompes d'affilée
+                      Objectif : {goal} pompes d&apos;affilée
                     </p>
                     <div className="flex gap-4 mt-1.5">
                       <div>

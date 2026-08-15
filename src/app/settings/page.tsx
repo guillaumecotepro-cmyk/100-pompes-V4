@@ -38,7 +38,7 @@ export default function SettingsPage() {
             <Card>
               <div className="flex flex-col gap-1 text-sm text-gray-600">
                 <p><span className="font-semibold text-gray-900">100 Pompes</span> <span className="text-brand-500 font-semibold">v1.0.0</span></p>
-                <p className="text-xs text-gray-400 mt-1">Comptage par tap — touchez l'écran ou le bout du nez à chaque pompe.</p>
+                <p className="text-xs text-gray-400 mt-1">Comptage par tap — touchez l&apos;écran ou le bout du nez à chaque pompe.</p>
                 <p className="text-xs text-gray-400">Données stockées localement. Aucune connexion requise.</p>
               </div>
             </Card>
@@ -49,7 +49,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-gray-900 text-sm">En savoir +</p>
-                  <p className="text-xs text-gray-500 mt-0.5">Fonctionnement complet de l'application</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Fonctionnement complet de l&apos;application</p>
                 </div>
                 <ChevronRight size={16} className="text-gray-300" />
               </Card>
@@ -66,7 +66,7 @@ export default function SettingsPage() {
                 Réinitialiser toutes les données. Cette action est irréversible.
               </p>
               <Button variant="danger" size="md" fullWidth onClick={() => setConfirmReset(true)}>
-                <AlertTriangle size={16} /> Réinitialiser l'application
+                <AlertTriangle size={16} /> Réinitialiser l&apos;application
               </Button>
             </Card>
           ) : resetDone ? (

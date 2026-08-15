@@ -85,7 +85,7 @@ export default function OnboardingPage() {
               </div>
               <div className="flex flex-col gap-3">
                 <Card className="bg-brand-50 border-brand-200">
-                  <p className="text-sm font-semibold text-brand-800">Ce qui t'attend :</p>
+                  <p className="text-sm font-semibold text-brand-800">Ce qui t&apos;attend :</p>
                   <ul className="mt-2 flex flex-col gap-1.5 text-sm text-brand-700">
                     <li>• Un test initial pour évaluer ton niveau</li>
                     <li>• Un programme adaptatif sur plusieurs semaines</li>
@@ -99,7 +99,7 @@ export default function OnboardingPage() {
               </div>
               <div className="mt-auto">
                 <Button size="xl" fullWidth onClick={goNext}>
-                  C'est parti ! <ChevronRight size={20} />
+                  C&apos;est parti ! <ChevronRight size={20} />
                 </Button>
               </div>
             </motion.div>
@@ -109,7 +109,7 @@ export default function OnboardingPage() {
             <motion.div key={1} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -40 }}
               className="flex flex-col gap-6 h-full">
               <div>
-                <h2 className="text-3xl font-black text-gray-900">Comment tu t'appelles ?</h2>
+                <h2 className="text-3xl font-black text-gray-900">Comment tu t&apos;appelles ?</h2>
                 <p className="text-gray-500 mt-2">Pour personnaliser ton expérience.</p>
               </div>
 
@@ -189,7 +189,7 @@ export default function OnboardingPage() {
                   Parfait, {name.trim() || 'toi'} !
                 </h2>
                 <p className="text-gray-500 mt-2">
-                  L'étape suivante est ton test initial. Tu vas faire un maximum de pompes en une seule série.
+                  L&apos;étape suivante est ton test initial. Tu vas faire un maximum de pompes en une seule série.
                 </p>
               </div>
               <Card className="bg-amber-50 border-amber-200">
@@ -202,7 +202,7 @@ export default function OnboardingPage() {
                 <p className="text-sm font-semibold text-gray-700 mb-2">Pour le test tu auras besoin de :</p>
                 <ul className="text-sm text-gray-600 flex flex-col gap-1">
                   <li>✓ Un sol dur (pas de lit ou canapé)</li>
-                  <li>✓ Un peu d'espace devant toi</li>
+                  <li>✓ Un peu d&apos;espace devant toi</li>
                   <li>✓ Ton téléphone à portée de main</li>
                 </ul>
               </Card>
