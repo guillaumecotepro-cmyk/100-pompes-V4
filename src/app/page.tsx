@@ -1,7 +1,9 @@
 'use client'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ChevronRight, Dumbbell, Timer, Flame, Trophy } from 'lucide-react'
+import { ChevronRight, Dumbbell, Timer, Flame, Trophy, Settings, Bell, X } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Progress } from '@/components/ui/Progress'
 import { useAppData } from '@/hooks/useWorkoutProgram'
@@ -9,10 +11,30 @@ import { getNextSession, getProgressPercent } from '@/lib/programGenerator'
 import { getNextPlankProgramSession, getPlankProgramProgress } from '@/lib/plank/programGenerator'
 import { computePlankStreak } from '@/lib/plank/stats'
 import { formatPlankGoal } from '@/lib/plank/format'
+import { computeCombinedStreak, computeCombinedWeekSummary } from '@/lib/combined'
+import { shouldShowReminder } from '@/lib/reminders'
+import { isToday } from '@/lib/utils'
 
 export default function ActivityChooserPage() {
   const router = useRouter()
   const { data, hydrated } = useAppData()
+  const [reminderDismissed, setReminderDismissed] = useState(false)
+  const notifiedRef = useRef(false)
+
+  const combinedStreak = useMemo(() => hydrated ? computeCombinedStreak(data) : null, [hydrated, data])
+  const weekSummary = useMemo(() => hydrated ? computeCombinedWeekSummary(data) : null, [hydrated, data])
+
+  const pompesDoneToday = hydrated && data.history.some(h => h.completed && isToday(h.date))
+  const gainageDoneToday = hydrated && data.gainage.sessions.some(s => s.status === 'completed' && isToday(s.date))
+  const reminderDue = hydrated && shouldShowReminder(data.reminders, { pompes: pompesDoneToday, gainage: gainageDoneToday })
+
+  useEffect(() => {
+    if (!reminderDue || notifiedRef.current) return
+    notifiedRef.current = true
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification('100 Pompes', { body: 'Petit rappel : ta séance du jour t\'attend 💪', icon: '/icon-192.png' })
+    }
+  }, [reminderDue])
 
   if (!hydrated) return (
     <div className="app-content-page flex items-center justify-center" style={{ minHeight: '75dvh' }}>
@@ -33,10 +55,41 @@ export default function ActivityChooserPage() {
 
   return (
     <main className="app-content-page flex flex-col px-4 pt-8 pb-10 gap-5 max-w-md mx-auto w-full">
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-1">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative text-center mb-1">
         <h1 className="text-2xl font-black text-gray-900">Choisis ton activité</h1>
         <p className="text-sm text-gray-500 mt-1">Tu peux basculer entre les deux à tout moment.</p>
+        <Link href="/account" aria-label="Compte et réglages" className="absolute right-0 top-0 p-2 rounded-xl hover:bg-gray-100">
+          <Settings size={18} className="text-gray-400" />
+        </Link>
       </motion.div>
+
+      {reminderDue && !reminderDismissed && (
+        <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+          <Card className="bg-amber-50 border-amber-200 flex items-center gap-3">
+            <Bell size={18} className="text-amber-600 shrink-0" />
+            <p className="flex-1 text-xs text-amber-800">Petit rappel : ta séance du jour t&apos;attend.</p>
+            <button onClick={() => setReminderDismissed(true)} aria-label="Fermer" className="text-amber-400">
+              <X size={16} />
+            </button>
+          </Card>
+        </motion.div>
+      )}
+
+      {combinedStreak && weekSummary && (combinedStreak.currentStreak > 0 || weekSummary.activeDaysThisWeek > 0) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}>
+          <Card className="bg-gray-900 text-white flex items-center justify-around py-3">
+            <div className="text-center">
+              <p className="text-xl font-black">{combinedStreak.currentStreak}</p>
+              <p className="text-[10px] text-white/60 uppercase tracking-wide">jour{combinedStreak.currentStreak > 1 ? 's' : ''} de suite</p>
+            </div>
+            <div className="w-px h-8 bg-white/15" />
+            <div className="text-center">
+              <p className="text-xl font-black">{weekSummary.activeDaysThisWeek}/7</p>
+              <p className="text-[10px] text-white/60 uppercase tracking-wide">jours cette semaine</p>
+            </div>
+          </Card>
+        </motion.div>
+      )}
 
       {/* ── Carte Pompes ── */}
       <motion.button

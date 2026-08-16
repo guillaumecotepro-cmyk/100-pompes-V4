@@ -84,12 +84,6 @@ export interface PlankSettings {
   gongEnabled: boolean
   vibrationEnabled: boolean
   restSeconds: number
-  reminders: {
-    enabled: boolean
-    days: number[] // 0 (dimanche) .. 6 (samedi)
-    hour: number
-    minute: number
-  }
 }
 
 export interface GainageData {

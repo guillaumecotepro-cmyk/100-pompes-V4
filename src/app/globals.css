@@ -106,6 +106,14 @@ button {
   touch-action: manipulation;
 }
 
+/* Export PDF (bilan imprimable) : voir src/app/account/page.tsx */
+.print-only { display: none; }
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  .app-hero, .bottom-nav, .install-prompt { display: none !important; }
+}
+
 .app-hero {
   position: relative;
   height: 25dvh;

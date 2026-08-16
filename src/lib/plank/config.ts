@@ -43,10 +43,4 @@ export const DEFAULT_PLANK_SETTINGS = {
   gongEnabled: true,
   vibrationEnabled: true,
   restSeconds: DEFAULT_REST_SECONDS,
-  reminders: {
-    enabled: false,
-    days: [] as number[],
-    hour: 18,
-    minute: 0,
-  },
 }

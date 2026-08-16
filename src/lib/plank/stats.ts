@@ -23,17 +23,14 @@ export interface StreakResult {
 }
 
 /**
- * Série de jours actifs : au moins une séance terminée par jour civil
- * local. Plusieurs séances le même jour ne comptent qu'une fois.
- * `now` est injectable pour des tests déterministes.
+ * Calcule la série courante/meilleure à partir d'un ensemble de numéros de
+ * jour (voir localDayNumber). Générique — réutilisé pour Gainage seul et
+ * pour la série combinée Pompes + Gainage.
  */
-export function computePlankStreak(sessions: PlankSession[], now: Date = new Date()): StreakResult {
-  const completedDays = new Set(
-    sessions.filter(s => s.status === 'completed').map(s => localDayNumber(s.date))
-  )
-  if (completedDays.size === 0) return { currentStreak: 0, bestStreak: 0 }
+export function computeStreakFromDays(activeDays: Set<number>, now: Date = new Date()): StreakResult {
+  if (activeDays.size === 0) return { currentStreak: 0, bestStreak: 0 }
 
-  const sortedDays = Array.from(completedDays).sort((a, b) => a - b)
+  const sortedDays = Array.from(activeDays).sort((a, b) => a - b)
 
   let bestStreak = 1
   let run = 1
@@ -43,21 +40,33 @@ export function computePlankStreak(sessions: PlankSession[], now: Date = new Dat
   }
 
   const todayNumber = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86_400_000)
-  let cursor = completedDays.has(todayNumber)
+  let cursor = activeDays.has(todayNumber)
     ? todayNumber
-    : completedDays.has(todayNumber - 1)
+    : activeDays.has(todayNumber - 1)
       ? todayNumber - 1
       : null
 
   let currentStreak = 0
   if (cursor !== null) {
-    while (completedDays.has(cursor)) {
+    while (activeDays.has(cursor)) {
       currentStreak += 1
       cursor -= 1
     }
   }
 
   return { currentStreak, bestStreak }
+}
+
+/**
+ * Série de jours actifs : au moins une séance terminée par jour civil
+ * local. Plusieurs séances le même jour ne comptent qu'une fois.
+ * `now` est injectable pour des tests déterministes.
+ */
+export function computePlankStreak(sessions: PlankSession[], now: Date = new Date()): StreakResult {
+  const completedDays = new Set(
+    sessions.filter(s => s.status === 'completed').map(s => localDayNumber(s.date))
+  )
+  return computeStreakFromDays(completedDays, now)
 }
 
 export interface PlankTotals {

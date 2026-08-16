@@ -3,7 +3,7 @@ import { DEFAULT_PLANK_SETTINGS } from './config'
 
 export const DEFAULT_GAINAGE_DATA: GainageData = {
   onboarded: false,
-  settings: { ...DEFAULT_PLANK_SETTINGS, reminders: { ...DEFAULT_PLANK_SETTINGS.reminders, days: [] } },
+  settings: { ...DEFAULT_PLANK_SETTINGS },
   tests: [],
   programs: [],
   activeProgramId: null,
@@ -24,7 +24,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function migrateGainageData(raw: unknown): GainageData {
   const source = isRecord(raw) ? raw : {}
   const settingsSource = isRecord(source.settings) ? source.settings : {}
-  const remindersSource = isRecord(settingsSource.reminders) ? settingsSource.reminders : {}
 
   return {
     onboarded: source.onboarded === true,
@@ -34,12 +33,6 @@ export function migrateGainageData(raw: unknown): GainageData {
       gongEnabled: settingsSource.gongEnabled !== false,
       vibrationEnabled: settingsSource.vibrationEnabled !== false,
       restSeconds: typeof settingsSource.restSeconds === 'number' ? settingsSource.restSeconds : DEFAULT_PLANK_SETTINGS.restSeconds,
-      reminders: {
-        enabled: remindersSource.enabled === true,
-        days: Array.isArray(remindersSource.days) ? remindersSource.days.filter((d): d is number => typeof d === 'number') : [],
-        hour: typeof remindersSource.hour === 'number' ? remindersSource.hour : DEFAULT_PLANK_SETTINGS.reminders.hour,
-        minute: typeof remindersSource.minute === 'number' ? remindersSource.minute : DEFAULT_PLANK_SETTINGS.reminders.minute,
-      },
     },
     tests: Array.isArray(source.tests) ? (source.tests as GainageData['tests']) : [],
     programs: Array.isArray(source.programs) ? (source.programs as GainageData['programs']) : [],

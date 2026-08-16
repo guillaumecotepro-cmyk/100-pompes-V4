@@ -77,6 +77,15 @@ export interface MaxPerformanceRecord {
   sensorMode: SensorMode
 }
 
+/** Rappel unique, partagé entre Pompes et Gainage (une seule config au lieu de deux). */
+export interface RemindersSettings {
+  enabled: boolean
+  days: number[] // 0 (dimanche) .. 6 (samedi)
+  hour: number
+  minute: number
+  activities: ActivityType[]
+}
+
 export interface AppData {
   schemaVersion: number
   updatedAt: string | null
@@ -89,6 +98,7 @@ export interface AppData {
   onboarded: boolean
   preferredSensorMode: SensorMode
   gainage: GainageData
+  reminders: RemindersSettings
 }
 
 export interface Badge {

@@ -1,9 +1,9 @@
-import { AppData, UserStats, WorkoutHistory } from '@/types'
+import { AppData, RemindersSettings, UserStats, WorkoutHistory } from '@/types'
 import { ALL_BADGES } from './programGenerator'
 import { migrateGainageData, DEFAULT_GAINAGE_DATA } from './plank/defaults'
 import { pickNewlyUnlocked } from './utils'
 
-export const STORAGE_SCHEMA_VERSION = 3
+export const STORAGE_SCHEMA_VERSION = 4
 export const STORAGE_KEY = '100pompes_v1'
 export const STORAGE_BACKUP_KEY = '100pompes_v1_backup'
 export const LEGACY_STORAGE_KEYS = ['100pompes_data']
@@ -19,6 +19,14 @@ export const DEFAULT_STATS: UserStats = {
   weeklyPushups: 0,
 }
 
+export const DEFAULT_REMINDERS: RemindersSettings = {
+  enabled: false,
+  days: [],
+  hour: 18,
+  minute: 0,
+  activities: ['pompes', 'gainage'],
+}
+
 export const DEFAULT_APP_DATA: AppData = {
   schemaVersion: STORAGE_SCHEMA_VERSION,
   updatedAt: null,
@@ -31,6 +39,7 @@ export const DEFAULT_APP_DATA: AppData = {
   onboarded: false,
   preferredSensorMode: 'tap',
   gainage: DEFAULT_GAINAGE_DATA,
+  reminders: DEFAULT_REMINDERS,
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -58,7 +67,45 @@ export function migrateAppData(raw: unknown): AppData {
     onboarded: candidate.onboarded === true,
     preferredSensorMode: 'tap',
     gainage: migrateGainageData(candidate.gainage),
+    reminders: migrateReminders(candidate),
   }
+}
+
+/**
+ * Rappels combinés (Pompes + Gainage) : un seul réglage partagé au lieu de
+ * deux. Migration additive et non destructive — si l'ancien réglage
+ * gainage.settings.reminders existait et était activé, il sert une seule
+ * fois de base au nouveau réglage combiné ; il reste sinon inchangé dans
+ * gainage.settings (champ devenu simplement inutilisé par l'UI).
+ */
+function migrateReminders(candidate: Record<string, unknown>): RemindersSettings {
+  if (isRecord(candidate.reminders)) {
+    const r = candidate.reminders
+    return {
+      enabled: r.enabled === true,
+      days: Array.isArray(r.days) ? r.days.filter((d): d is number => typeof d === 'number') : [],
+      hour: typeof r.hour === 'number' ? r.hour : DEFAULT_REMINDERS.hour,
+      minute: typeof r.minute === 'number' ? r.minute : DEFAULT_REMINDERS.minute,
+      activities: Array.isArray(r.activities) && r.activities.length > 0
+        ? r.activities.filter((a): a is 'pompes' | 'gainage' => a === 'pompes' || a === 'gainage')
+        : DEFAULT_REMINDERS.activities,
+    }
+  }
+
+  const legacy = isRecord(candidate.gainage) && isRecord(candidate.gainage.settings)
+    ? candidate.gainage.settings.reminders
+    : null
+  if (isRecord(legacy) && legacy.enabled === true) {
+    return {
+      enabled: true,
+      days: Array.isArray(legacy.days) ? legacy.days.filter((d): d is number => typeof d === 'number') : [],
+      hour: typeof legacy.hour === 'number' ? legacy.hour : DEFAULT_REMINDERS.hour,
+      minute: typeof legacy.minute === 'number' ? legacy.minute : DEFAULT_REMINDERS.minute,
+      activities: ['gainage'],
+    }
+  }
+
+  return DEFAULT_REMINDERS
 }
 
 export function prepareAppDataForSave(data: AppData): AppData {

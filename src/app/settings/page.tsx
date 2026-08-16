@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, Info } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw, Info, User, Bell } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
@@ -31,6 +31,23 @@ export default function SettingsPage() {
       </div>
 
       <div className="px-4 py-4 flex flex-col gap-5">
+        {/* Compte & données (partagé avec Gainage) */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Compte &amp; données</p>
+          <Link href="/account">
+            <Card className="flex items-center gap-3 hover:bg-gray-50 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                <User size={18} className="text-brand-500" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 text-sm">Compte &amp; données</p>
+                <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1"><Bell size={11} /> Rappels, synchronisation cloud, export</p>
+              </div>
+              <ChevronRight size={16} className="text-gray-300" />
+            </Card>
+          </Link>
+        </div>
+
         {/* About */}
         <div>
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">À propos</p>
