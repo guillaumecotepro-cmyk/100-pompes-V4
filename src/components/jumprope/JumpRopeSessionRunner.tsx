@@ -9,6 +9,7 @@ import { formatClock, formatJumps, formatCadence, COUNTING_METHOD_LABELS } from 
 import { JumpCountingMethod, JumpSeries, JumpSessionMode } from '@/types/rope'
 import { POSE_ALGORITHM_VERSION } from '@/lib/rope/poseCountingEngine'
 import { MOTION_ALGORITHM_VERSION } from '@/lib/rope/motionCountingEngine'
+import { cn } from '@/lib/utils'
 
 export interface SessionBlock {
   type: 'warmup' | 'work' | 'rest' | 'cooldown'
@@ -42,6 +43,8 @@ interface JumpRopeSessionRunnerProps {
   audio: JumpRopeAudioEngine
   announceEveryNJumps: 0 | 10 | 25 | 50 | 100
   announceHalfway: boolean
+  /** Vrai quand un fond caméra plein écran est affiché derrière ce composant (méthode caméra) — bascule le style en clair-sur-sombre. */
+  cameraActive: boolean
   onFinish: (result: SessionResult) => void
   onAbandon: () => void
 }
@@ -49,7 +52,7 @@ interface JumpRopeSessionRunnerProps {
 const MIN_MANUAL_TAP_INTERVAL_MS = 250
 
 export function JumpRopeSessionRunner({
-  mode, blocks, countingMethod, jumpBridgeRef, pauseCounting, resumeCounting, audio, announceEveryNJumps, announceHalfway, onFinish, onAbandon,
+  mode, blocks, countingMethod, jumpBridgeRef, pauseCounting, resumeCounting, audio, announceEveryNJumps, announceHalfway, cameraActive, onFinish, onAbandon,
 }: JumpRopeSessionRunnerProps) {
   const [phase, setPhase] = useState<'countdown' | 'running' | 'paused' | 'finished'>('countdown')
   const [countdownValue, setCountdownValue] = useState<3 | 2 | 1 | 0>(3)
@@ -233,8 +236,8 @@ export function JumpRopeSessionRunner({
   if (phase === 'countdown') {
     return (
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        <p className="text-sm text-gray-500 font-semibold uppercase tracking-wide">Prépare-toi</p>
-        <div key={countdownValue} className="text-8xl font-black text-violet-600 animate-bounce-in">
+        <p className={cn('text-sm font-semibold uppercase tracking-wide', cameraActive ? 'text-white/80' : 'text-gray-500')}>Prépare-toi</p>
+        <div key={countdownValue} className={cn('text-8xl font-black animate-bounce-in', cameraActive ? 'text-lime-400' : 'text-violet-600')}>
           {countdownValue === 0 ? 'GO' : countdownValue}
         </div>
       </div>
@@ -245,26 +248,26 @@ export function JumpRopeSessionRunner({
     <div className="flex-1 flex flex-col">
       {locked ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
-          <p className="text-6xl font-black text-gray-300">{formatJumps(jumpsThisBlock)}</p>
-          <button onClick={() => setLocked(false)} className="flex items-center gap-2 px-5 py-3 rounded-full bg-gray-100 text-gray-600 font-semibold text-sm">
+          <p className={cn('text-6xl font-black', cameraActive ? 'text-white/50' : 'text-gray-300')}>{formatJumps(jumpsThisBlock)}</p>
+          <button onClick={() => setLocked(false)} className={cn('flex items-center gap-2 px-5 py-3 rounded-full font-semibold text-sm', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-600')}>
             <Unlock size={16} /> Déverrouiller l&apos;écran
           </button>
         </div>
       ) : (
         <>
           <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-violet-700 bg-violet-50 px-2.5 py-1 rounded-full">{currentBlock?.label ?? ''}</span>
-            <span className="text-xs text-gray-400">{COUNTING_METHOD_LABELS[countingMethod]}</span>
+            <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full', cameraActive ? 'text-white bg-white/15' : 'text-violet-700 bg-violet-50')}>{currentBlock?.label ?? ''}</span>
+            <span className={cn('text-xs', cameraActive ? 'text-white/70' : 'text-gray-400')}>{COUNTING_METHOD_LABELS[countingMethod]}</span>
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center gap-2">
-            <p className="text-7xl font-black text-gray-900 tabular-nums">{formatJumps(jumpsThisBlock)}</p>
-            <p className="text-sm text-gray-500 font-semibold">{goalLabel}</p>
+            <p className={cn('text-7xl font-black tabular-nums', cameraActive ? 'text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]' : 'text-gray-900')}>{formatJumps(jumpsThisBlock)}</p>
+            <p className={cn('text-sm font-semibold', cameraActive ? 'text-white/85' : 'text-gray-500')}>{goalLabel}</p>
             {jumpTimestampsRef.current.length >= 2 && (
-              <p className="text-xs text-gray-400">{formatCadence(computeCadenceFromTimestamps(jumpTimestampsRef.current).avgCadence)}</p>
+              <p className={cn('text-xs', cameraActive ? 'text-white/60' : 'text-gray-400')}>{formatCadence(computeCadenceFromTimestamps(jumpTimestampsRef.current).avgCadence)}</p>
             )}
             {mode !== 'free' && !currentBlock?.targetJumps && currentBlock?.durationSeconds && (
-              <p className="text-xs text-gray-400">Temps écoulé : {formatClock(timer.elapsedSeconds)}</p>
+              <p className={cn('text-xs', cameraActive ? 'text-white/60' : 'text-gray-400')}>Temps écoulé : {formatClock(timer.elapsedSeconds)}</p>
             )}
           </div>
 
@@ -278,17 +281,17 @@ export function JumpRopeSessionRunner({
           )}
 
           <div className="flex items-center justify-center gap-2 px-4 pb-2">
-            <button onClick={() => correctLive(-1)} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><Minus size={16} /></button>
-            <button onClick={() => correctLive(-5)} className="px-2 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold">-5</button>
-            <button onClick={() => correctLive(5)} className="px-2 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold">+5</button>
-            <button onClick={() => correctLive(1)} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500"><Plus size={16} /></button>
+            <button onClick={() => correctLive(-1)} className={cn('w-10 h-10 rounded-full flex items-center justify-center', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}><Minus size={16} /></button>
+            <button onClick={() => correctLive(-5)} className={cn('px-2 h-10 rounded-full flex items-center justify-center text-xs font-bold', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}>-5</button>
+            <button onClick={() => correctLive(5)} className={cn('px-2 h-10 rounded-full flex items-center justify-center text-xs font-bold', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}>+5</button>
+            <button onClick={() => correctLive(1)} className={cn('w-10 h-10 rounded-full flex items-center justify-center', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}><Plus size={16} /></button>
           </div>
 
           <div className="flex items-center gap-2 px-4 pb-4">
-            <button onClick={() => setLocked(true)} className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+            <button onClick={() => setLocked(true)} className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}>
               <Lock size={18} />
             </button>
-            <button onClick={() => setMuted(m => !m)} className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-500 shrink-0">
+            <button onClick={() => setMuted(m => !m)} className={cn('w-12 h-12 rounded-2xl flex items-center justify-center shrink-0', cameraActive ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-500')}>
               {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
             <button onClick={togglePause} className="flex-1 h-12 rounded-2xl bg-violet-600 text-white font-bold flex items-center justify-center gap-2">
@@ -299,7 +302,7 @@ export function JumpRopeSessionRunner({
             </button>
           </div>
           {phase === 'paused' && (
-            <button onClick={onAbandon} className="mx-4 mb-4 text-xs text-red-500 font-semibold text-center">
+            <button onClick={onAbandon} className={cn('mx-4 mb-4 text-xs font-semibold text-center', cameraActive ? 'text-red-300' : 'text-red-500')}>
               Abandonner la séance
             </button>
           )}

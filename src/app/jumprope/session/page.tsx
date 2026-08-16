@@ -9,6 +9,7 @@ import { useJumpRopeAudio } from '@/hooks/rope/useJumpRopeAudio'
 import { useCameraJumpCounter } from '@/hooks/rope/useCameraJumpCounter'
 import { useMotionJumpCounter } from '@/hooks/rope/useMotionJumpCounter'
 import { CountingMethodPicker } from '@/components/jumprope/CountingMethodPicker'
+import { CameraBackground } from '@/components/jumprope/CameraBackground'
 import { JumpConfigStep } from '@/components/jumprope/JumpConfigStep'
 import { JumpRopeSessionRunner, SessionBlock, SessionResult, JumpBridge } from '@/components/jumprope/JumpRopeSessionRunner'
 import { getJumpProgram } from '@/lib/rope/programs'
@@ -34,17 +35,28 @@ function SessionFlow() {
   const needsConfig = mode === 'goal_jumps' || mode === 'goal_duration' || mode === 'intervals'
   const [phase, setPhase] = useState<Phase>(needsConfig ? 'config' : 'method')
   const [blocks, setBlocks] = useState<SessionBlock[] | null>(null)
+  const [selectedMethod, setSelectedMethod] = useState<JumpCountingMethod | null>(null)
   const [countingMethod, setCountingMethod] = useState<JumpCountingMethod | null>(null)
   const [lastResult, setLastResult] = useState<SessionResult | null>(null)
   const previousBestSession = useRef(0)
 
   const jumpBridgeRef = useRef<JumpBridge>(() => {})
-  const cameraActive = phase === 'method' || phase === 'runner'
-  const camera = useCameraJumpCounter({ active: cameraActive, onJump: (_c, t) => jumpBridgeRef.current(t) })
-  const motion = useMotionJumpCounter({ active: cameraActive, onJump: (_c, t) => jumpBridgeRef.current(t) })
+  const detectionActive = phase === 'method' || phase === 'runner'
+  const camera = useCameraJumpCounter({ active: detectionActive, onJump: (_c, t) => jumpBridgeRef.current(t) })
+  const motion = useMotionJumpCounter({ active: detectionActive, onJump: (_c, t) => jumpBridgeRef.current(t) })
+  // Le fond caméra plein écran reste monté (donc la boucle de détection continue de recevoir des frames)
+  // tant que la caméra est la méthode choisie, de l'écran de configuration jusqu'à la fin de la séance.
+  const cameraBackgroundActive = selectedMethod === 'camera' && phase !== 'summary'
 
-  const pauseCounting = useCallback(() => { camera.pause(); motion.pause() }, [camera, motion])
-  const resumeCounting = useCallback(() => { camera.resume(); motion.resume() }, [camera, motion])
+  // Dépend des fonctions stables (`camera.pause` etc., mémoïsées à vide dans leurs hooks respectifs) et
+  // jamais des objets `camera`/`motion` eux-mêmes : ceux-ci changent d'identité à chaque frame de détection
+  // (~60/s), ce qui casserait toute logique de timing en aval (ex. le décompte 3-2-1) dépendant de ces callbacks.
+  const cameraPause = camera.pause
+  const cameraResume = camera.resume
+  const motionPause = motion.pause
+  const motionResume = motion.resume
+  const pauseCounting = useCallback(() => { cameraPause(); motionPause() }, [cameraPause, motionPause])
+  const resumeCounting = useCallback(() => { cameraResume(); motionResume() }, [cameraResume, motionResume])
 
   // Résolution automatique des blocs pour les modes qui n'ont pas besoin d'étape de configuration.
   useEffect(() => {
@@ -65,6 +77,11 @@ function SessionFlow() {
     }
     setBlocks([{ type: 'work', durationSeconds: null, targetJumps: null, label: 'Séance libre' }])
   }, [hydrated, blocks, needsConfig, mode, workoutParam, dayParam, targetJumpsParam, targetDurationParam, jumprope.activeProgramId])
+
+  // Pré-sélectionne la méthode préférée (réglages) une fois les données hydratées, sans jamais redemander la permission automatiquement.
+  useEffect(() => {
+    if (hydrated && selectedMethod === null) setSelectedMethod(jumprope.settings.preferredCountingMethod)
+  }, [hydrated, selectedMethod, jumprope.settings.preferredCountingMethod])
 
   const handleConfigConfirm = useCallback((configuredBlocks: SessionBlock[]) => {
     setBlocks(configuredBlocks)
@@ -113,49 +130,60 @@ function SessionFlow() {
     router.push('/jumprope/start')
   }
 
+  const cameraLive = cameraBackgroundActive && camera.permission === 'granted'
+
   if (phase !== 'runner') {
     return (
-      <div className="app-content-page bg-white flex flex-col">
-        <div className="flex items-center gap-3 px-4 pt-6 pb-4">
-          <button onClick={back} className="p-2 rounded-xl hover:bg-gray-100">
-            <ChevronLeft size={22} className="text-gray-500" />
-          </button>
+      <>
+        <CameraBackground camera={camera} active={cameraBackgroundActive} />
+        <div className="app-content-page flex flex-col" style={cameraLive ? { background: 'transparent' } : undefined}>
+          <div className="relative z-10 flex items-center gap-3 px-4 pt-6 pb-4">
+            <button onClick={back} className={`p-2 rounded-xl ${cameraLive ? 'bg-black/30 hover:bg-black/40' : 'hover:bg-gray-100'}`}>
+              <ChevronLeft size={22} className={cameraLive ? 'text-white' : 'text-gray-500'} />
+            </button>
+          </div>
+          <div className="relative z-10 flex-1 px-5 pt-2 flex flex-col page-scroll-gutter">
+            {phase === 'config' && <JumpConfigStep mode={mode as 'goal_jumps' | 'goal_duration' | 'intervals'} onConfirm={handleConfigConfirm} />}
+            {phase === 'method' && (
+              <CountingMethodPicker camera={camera} motion={motion} selected={selectedMethod} onSelect={setSelectedMethod} onReady={handleMethodReady} />
+            )}
+            {phase === 'summary' && lastResult && (
+              <SummaryScreen
+                result={lastResult}
+                isNewRecord={lastResult.totalJumps > previousBestSession.current}
+                weightKg={jumprope.profile?.weightKg ?? null}
+              />
+            )}
+          </div>
         </div>
-        <div className="flex-1 px-5 pt-2 flex flex-col page-scroll-gutter">
-          {phase === 'config' && <JumpConfigStep mode={mode as 'goal_jumps' | 'goal_duration' | 'intervals'} onConfirm={handleConfigConfirm} />}
-          {phase === 'method' && (
-            <CountingMethodPicker camera={camera} motion={motion} defaultMethod={jumprope.settings.preferredCountingMethod} onReady={handleMethodReady} />
-          )}
-          {phase === 'summary' && lastResult && (
-            <SummaryScreen
-              result={lastResult}
-              isNewRecord={lastResult.totalJumps > previousBestSession.current}
-              weightKg={jumprope.profile?.weightKg ?? null}
-            />
-          )}
-        </div>
-      </div>
+      </>
     )
   }
 
   if (!blocks || !countingMethod) return null
 
   return (
-    <div className="app-content-page bg-white flex flex-col px-4 pt-6">
-      <JumpRopeSessionRunner
-        mode={mode}
-        blocks={blocks}
-        countingMethod={countingMethod}
-        jumpBridgeRef={jumpBridgeRef}
-        pauseCounting={pauseCounting}
-        resumeCounting={resumeCounting}
-        audio={audio}
-        announceEveryNJumps={jumprope.settings.announceEveryNJumps}
-        announceHalfway={jumprope.settings.announceHalfway}
-        onFinish={handleFinish}
-        onAbandon={handleAbandon}
-      />
-    </div>
+    <>
+      <CameraBackground camera={camera} active={cameraBackgroundActive} />
+      <div className="app-content-page flex flex-col px-4 pt-6" style={cameraLive ? { background: 'transparent' } : undefined}>
+        <div className="relative z-10 flex-1 flex flex-col">
+          <JumpRopeSessionRunner
+            mode={mode}
+            blocks={blocks}
+            countingMethod={countingMethod}
+            jumpBridgeRef={jumpBridgeRef}
+            pauseCounting={pauseCounting}
+            resumeCounting={resumeCounting}
+            audio={audio}
+            announceEveryNJumps={jumprope.settings.announceEveryNJumps}
+            announceHalfway={jumprope.settings.announceHalfway}
+            cameraActive={cameraLive}
+            onFinish={handleFinish}
+            onAbandon={handleAbandon}
+          />
+        </div>
+      </div>
+    </>
   )
 }
 

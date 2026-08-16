@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PoseJumpCounter, POSE_ALGORITHM_VERSION } from '@/lib/rope/poseCountingEngine'
 import { loadPoseLandmarker } from '@/lib/rope/pose/landmarkerLoader'
-import { diagnoseFraming, FramingIssue, mapLandmarksToPoseFrame, PreviousFrameState } from '@/lib/rope/pose/mapLandmarks'
+import { diagnoseFraming, FramingIssue, mapLandmarksToPoseFrame, NormalizedLandmark, PreviousFrameState } from '@/lib/rope/pose/mapLandmarks'
 
 export type CameraPermissionState = 'idle' | 'requesting' | 'granted' | 'denied' | 'unsupported'
 export type CameraModelState = 'idle' | 'loading' | 'ready' | 'error'
@@ -27,11 +27,12 @@ interface UseCameraJumpCounterOptions {
  * cache par le module) et réutilisé entre les séances.
  */
 export function useCameraJumpCounter({ active, onJump }: UseCameraJumpCounterOptions) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const videoElRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const counterRef = useRef<PoseJumpCounter>(new PoseJumpCounter())
   const prevFrameStateRef = useRef<PreviousFrameState | null>(null)
   const rafRef = useRef<number | null>(null)
+  const modelLoadStartedRef = useRef(false)
   const onJumpRef = useRef(onJump)
   onJumpRef.current = onJump
 
@@ -40,14 +41,36 @@ export function useCameraJumpCounter({ active, onJump }: UseCameraJumpCounterOpt
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user')
   const [jumpCount, setJumpCount] = useState(0)
   const [detection, setDetection] = useState<CameraDetectionStatus>({ bodyVisible: false, confidence: 0, framingIssue: null })
+  const [lastLandmarks, setLastLandmarks] = useState<NormalizedLandmark[] | null>(null)
 
   const stopStream = useCallback(() => {
     streamRef.current?.getTracks().forEach(track => track.stop())
     streamRef.current = null
-    if (videoRef.current) videoRef.current.srcObject = null
+    if (videoElRef.current) videoElRef.current.srcObject = null
   }, [])
 
-  const requestPermission = useCallback(async () => {
+  /**
+   * Attache le flux au `<video>` dès que les deux existent. Nécessaire car l'élément
+   * `<video>` n'est monté par le composant plein écran qu'après que la méthode caméra
+   * a été sélectionnée — au moment où `getUserMedia` se résout, il peut donc ne pas
+   * encore exister. Cette fonction est appelée à la fois depuis la ref-callback (dès
+   * que le nœud DOM apparaît) et juste après l'obtention du flux, quel que soit l'ordre.
+   */
+  const attachStreamIfReady = useCallback(() => {
+    const video = videoElRef.current
+    const stream = streamRef.current
+    if (video && stream && video.srcObject !== stream) {
+      video.srcObject = stream
+      void video.play().catch(() => { /* lecture différée au geste utilisateur suivant si bloquée */ })
+    }
+  }, [])
+
+  const videoRef = useCallback((node: HTMLVideoElement | null) => {
+    videoElRef.current = node
+    if (node) attachStreamIfReady()
+  }, [attachStreamIfReady])
+
+  const requestPermission = useCallback(async (facingModeOverride?: 'user' | 'environment') => {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       setPermission('unsupported')
       return
@@ -55,40 +78,40 @@ export function useCameraJumpCounter({ active, onJump }: UseCameraJumpCounterOpt
     setPermission('requesting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: facingModeOverride ?? facingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       })
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play().catch(() => { /* lecture différée au geste utilisateur suivant si bloquée */ })
-      }
+      attachStreamIfReady()
       setPermission('granted')
     } catch {
       // Refus explicite de l'utilisateur, ou aucune caméra disponible — jamais distingué à tort d'un vrai refus.
       setPermission('denied')
     }
-  }, [facingMode])
+  }, [facingMode, attachStreamIfReady])
 
   const switchCamera = useCallback(async () => {
     const next = facingMode === 'user' ? 'environment' : 'user'
     setFacingMode(next)
-    if (permission === 'granted') {
-      stopStream()
-      setPermission('idle')
-    }
-  }, [facingMode, permission, stopStream])
+    stopStream()
+    await requestPermission(next)
+  }, [facingMode, stopStream, requestPermission])
 
   // Charge le modèle de pose une fois la permission caméra accordée.
+  // Ne dépend QUE de `permission` : y inclure `modelState` déclencherait un
+  // nettoyage de cet effet dès le passage à 'loading' (qu'il provoque lui-même),
+  // qui marquerait la promesse en cours comme "annulée" avant sa résolution —
+  // le modèle ne passerait alors jamais à 'ready'.
   useEffect(() => {
-    if (permission !== 'granted' || modelState !== 'idle') return
+    if (permission !== 'granted' || modelLoadStartedRef.current) return
+    modelLoadStartedRef.current = true
     let cancelled = false
     setModelState('loading')
     loadPoseLandmarker()
       .then(() => { if (!cancelled) setModelState('ready') })
       .catch(() => { if (!cancelled) setModelState('error') })
     return () => { cancelled = true }
-  }, [permission, modelState])
+  }, [permission])
 
   const reset = useCallback(() => {
     counterRef.current.reset()
@@ -107,12 +130,13 @@ export function useCameraJumpCounter({ active, onJump }: UseCameraJumpCounterOpt
     loadPoseLandmarker().then(landmarker => {
       const loop = () => {
         if (cancelled) return
-        const video = videoRef.current
+        const video = videoElRef.current
         if (video && video.readyState >= 2) {
           const result = landmarker.detectForVideo(video, performance.now())
           const { frame, state, feetVisible } = mapLandmarksToPoseFrame(result.landmarks[0], performance.now(), prevFrameStateRef.current)
           prevFrameStateRef.current = state
           setDetection({ bodyVisible: frame.bodyVisible, confidence: frame.confidence, framingIssue: diagnoseFraming(frame, feetVisible) })
+          setLastLandmarks(result.landmarks[0] ?? null)
 
           const jumpAt = counterRef.current.pushFrame(frame)
           if (jumpAt !== null) {
@@ -137,10 +161,12 @@ export function useCameraJumpCounter({ active, onJump }: UseCameraJumpCounterOpt
 
   return {
     videoRef,
+    videoElRef,
     permission,
     modelState,
     facingMode,
     detection,
+    lastLandmarks,
     jumpCount,
     currentState: counterRef.current.currentState,
     algorithmVersion: POSE_ALGORITHM_VERSION,
