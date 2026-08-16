@@ -14,7 +14,8 @@ import {
 } from '@/lib/storage'
 import { generateProgram } from '@/lib/programGenerator'
 import { generateId } from '@/lib/utils'
-import type { WorkoutHistory, CompletedSet, MaxPerformanceRecord, SensorMode } from '@/types'
+import type { WorkoutHistory, CompletedSet, MaxPerformanceRecord, SensorMode, PompesFreeSession, PompesFreeMode, PompesFreeSet } from '@/types'
+import type { PlankSettings } from '@/types/plank'
 
 interface ProfileOptions {
   avatarColor?: string
@@ -139,6 +140,47 @@ export function useAppData() {
     })
   }, [setData])
 
+  const saveFreeSession = useCallback((input: {
+    mode: PompesFreeMode
+    restSeconds: number
+    sets: PompesFreeSet[]
+    status: PompesFreeSession['status']
+  }) => {
+    setData(prev => {
+      const totalReps = input.sets.filter(s => s.status === 'completed').reduce((s, x) => s + x.actualReps, 0)
+      const actualDurationSeconds = input.sets.reduce((s, x) => s + x.actualDurationSeconds, 0)
+      const record: PompesFreeSession = {
+        id: generateId(),
+        date: new Date().toISOString(),
+        mode: input.mode,
+        plannedSetCount: input.sets.length,
+        restSeconds: input.restSeconds,
+        sets: input.sets,
+        totalReps,
+        actualDurationSeconds,
+        status: input.status,
+      }
+
+      const bestSet = input.sets.reduce((max, s) => Math.max(max, s.actualReps), 0)
+      const stats = {
+        ...prev.stats,
+        totalPushups: prev.stats.totalPushups + totalReps,
+        bestSingleSet: Math.max(prev.stats.bestSingleSet, bestSet),
+      }
+
+      let updated = { ...prev, pompesFreeHistory: [record, ...prev.pompesFreeHistory], stats }
+      const newBadges = checkNewBadges(updated)
+      if (newBadges.length > 0) {
+        updated = { ...updated, earnedBadges: [...updated.earnedBadges, ...newBadges] }
+      }
+      return updated
+    })
+  }, [setData])
+
+  const updatePompesAudioSettings = useCallback((patch: Partial<PlankSettings>) => {
+    setData(prev => ({ ...prev, pompesAudioSettings: { ...prev.pompesAudioSettings, ...patch } }))
+  }, [setData])
+
   const updateAvatarImage = useCallback((avatarImage: string | null) => {
     setData(prev => {
       if (!prev.profile) return prev
@@ -155,6 +197,8 @@ export function useAppData() {
     hydrated,
     completeSession,
     saveMaxPerformance,
+    saveFreeSession,
+    updatePompesAudioSettings,
     startProgram,
     setProfile,
     setSensorMode,

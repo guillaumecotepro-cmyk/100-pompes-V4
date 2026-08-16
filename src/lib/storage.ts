@@ -1,9 +1,11 @@
-import { AppData, RemindersSettings, UserStats, WorkoutHistory } from '@/types'
+import { AppData, PompesFreeSession, RemindersSettings, UserStats, WorkoutHistory } from '@/types'
+import { PlankSettings } from '@/types/plank'
 import { ALL_BADGES } from './programGenerator'
 import { migrateGainageData, DEFAULT_GAINAGE_DATA } from './plank/defaults'
+import { DEFAULT_PLANK_SETTINGS } from './plank/config'
 import { pickNewlyUnlocked } from './utils'
 
-export const STORAGE_SCHEMA_VERSION = 4
+export const STORAGE_SCHEMA_VERSION = 5
 export const STORAGE_KEY = '100pompes_v1'
 export const STORAGE_BACKUP_KEY = '100pompes_v1_backup'
 export const LEGACY_STORAGE_KEYS = ['100pompes_data']
@@ -40,6 +42,8 @@ export const DEFAULT_APP_DATA: AppData = {
   preferredSensorMode: 'tap',
   gainage: DEFAULT_GAINAGE_DATA,
   reminders: DEFAULT_REMINDERS,
+  pompesFreeHistory: [],
+  pompesAudioSettings: { ...DEFAULT_PLANK_SETTINGS },
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -68,6 +72,21 @@ export function migrateAppData(raw: unknown): AppData {
     preferredSensorMode: 'tap',
     gainage: migrateGainageData(candidate.gainage),
     reminders: migrateReminders(candidate),
+    pompesFreeHistory: Array.isArray(candidate.pompesFreeHistory)
+      ? candidate.pompesFreeHistory as unknown as PompesFreeSession[]
+      : [],
+    pompesAudioSettings: migratePompesAudioSettings(candidate.pompesAudioSettings),
+  }
+}
+
+function migratePompesAudioSettings(raw: unknown): PlankSettings {
+  const s = isRecord(raw) ? raw : {}
+  return {
+    voiceEnabled: s.voiceEnabled !== false,
+    beepEnabled: s.beepEnabled !== false,
+    gongEnabled: s.gongEnabled !== false,
+    vibrationEnabled: s.vibrationEnabled !== false,
+    restSeconds: typeof s.restSeconds === 'number' ? s.restSeconds : DEFAULT_PLANK_SETTINGS.restSeconds,
   }
 }
 

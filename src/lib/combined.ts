@@ -1,6 +1,8 @@
-import { AppData, WorkoutHistory } from '@/types'
+import { AppData, PompesFreeSession, WorkoutHistory } from '@/types'
 import { PlankSession } from '@/types/plank'
 import { computeStreakFromDays, localDayNumber, StreakResult } from './plank/stats'
+
+type CombinedSource = Pick<AppData, 'history' | 'gainage' | 'pompesFreeHistory'>
 
 function startOfLocalWeekNumber(now: Date): number {
   const d = new Date(now)
@@ -9,8 +11,11 @@ function startOfLocalWeekNumber(now: Date): number {
   return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86_400_000)
 }
 
-function pompesActiveDayNumbers(history: WorkoutHistory[]): number[] {
-  return history.filter(h => h.completed).map(h => localDayNumber(h.date))
+function pompesActiveDayNumbers(history: WorkoutHistory[], freeHistory: PompesFreeSession[]): number[] {
+  return [
+    ...history.filter(h => h.completed).map(h => localDayNumber(h.date)),
+    ...freeHistory.filter(s => s.status === 'completed').map(s => localDayNumber(s.date)),
+  ]
 }
 
 function gainageActiveDayNumbers(sessions: PlankSession[]): number[] {
@@ -21,9 +26,9 @@ function gainageActiveDayNumbers(sessions: PlankSession[]): number[] {
  * Série de jours actifs toutes activités confondues : un jour compte dès
  * qu'au moins une séance (Pompes OU Gainage) a été terminée ce jour-là.
  */
-export function computeCombinedStreak(data: Pick<AppData, 'history' | 'gainage'>, now: Date = new Date()): StreakResult {
+export function computeCombinedStreak(data: CombinedSource, now: Date = new Date()): StreakResult {
   const days = new Set<number>([
-    ...pompesActiveDayNumbers(data.history),
+    ...pompesActiveDayNumbers(data.history, data.pompesFreeHistory),
     ...gainageActiveDayNumbers(data.gainage.sessions),
   ])
   return computeStreakFromDays(days, now)
@@ -36,9 +41,9 @@ export interface CombinedWeekSummary {
 }
 
 /** Résumé de la semaine civile en cours (dimanche -> aujourd'hui), toutes activités confondues. */
-export function computeCombinedWeekSummary(data: Pick<AppData, 'history' | 'gainage'>, now: Date = new Date()): CombinedWeekSummary {
+export function computeCombinedWeekSummary(data: CombinedSource, now: Date = new Date()): CombinedWeekSummary {
   const weekStart = startOfLocalWeekNumber(now)
-  const pompesDays = pompesActiveDayNumbers(data.history).filter(d => d >= weekStart)
+  const pompesDays = pompesActiveDayNumbers(data.history, data.pompesFreeHistory).filter(d => d >= weekStart)
   const gainageDays = gainageActiveDayNumbers(data.gainage.sessions).filter(d => d >= weekStart)
   const activeDaysThisWeek = new Set([...pompesDays, ...gainageDays]).size
 
@@ -55,8 +60,12 @@ export interface LastActivity {
 }
 
 /** La toute dernière activité terminée (Pompes ou Gainage), pour l'affichage "Dernière séance". */
-export function getLastActivity(data: Pick<AppData, 'history' | 'gainage'>): LastActivity | null {
-  const lastPompes = data.history.find(h => h.completed) ?? null
+export function getLastActivity(data: CombinedSource): LastActivity | null {
+  const lastProgramPompes = data.history.find(h => h.completed) ?? null
+  const lastFreePompes = data.pompesFreeHistory.find(s => s.status === 'completed') ?? null
+  const lastPompes = !lastProgramPompes ? lastFreePompes
+    : !lastFreePompes ? lastProgramPompes
+    : new Date(lastProgramPompes.date) >= new Date(lastFreePompes.date) ? lastProgramPompes : lastFreePompes
   const lastGainage = data.gainage.sessions.find(s => s.status === 'completed') ?? null
 
   if (!lastPompes && !lastGainage) return null

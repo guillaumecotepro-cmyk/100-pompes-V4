@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeCombinedStreak, computeCombinedWeekSummary, getLastActivity } from '../combined'
-import { AppData, WorkoutHistory } from '@/types'
+import { AppData, PompesFreeSession, WorkoutHistory } from '@/types'
 import { DEFAULT_APP_DATA } from '../storage'
 import { PlankSession } from '@/types/plank'
 
@@ -25,8 +25,18 @@ function gainageEntry(date: string, status: PlankSession['status'] = 'completed'
   }
 }
 
-function baseData(overrides: Partial<Pick<AppData, 'history' | 'gainage'>>): Pick<AppData, 'history' | 'gainage'> {
-  return { history: [], gainage: DEFAULT_APP_DATA.gainage, ...overrides }
+function pompesFreeEntry(date: string, status: PompesFreeSession['status'] = 'completed'): PompesFreeSession {
+  return {
+    id: Math.random().toString(36), date, mode: 'stopwatch', plannedSetCount: 1, restSeconds: 60,
+    sets: [{ order: 0, mode: 'stopwatch', targetSeconds: null, targetReps: null, actualReps: 15, actualDurationSeconds: 40, status: 'completed' }],
+    totalReps: 15, actualDurationSeconds: 40, status,
+  }
+}
+
+type CombinedTestData = Pick<AppData, 'history' | 'gainage' | 'pompesFreeHistory'>
+
+function baseData(overrides: Partial<CombinedTestData>): CombinedTestData {
+  return { history: [], gainage: DEFAULT_APP_DATA.gainage, pompesFreeHistory: [], ...overrides }
 }
 
 describe('computeCombinedStreak', () => {
@@ -52,6 +62,16 @@ describe('computeCombinedStreak', () => {
       history: [pompesEntry(isoDaysAgo(0), false)],
       gainage: { ...DEFAULT_APP_DATA.gainage, sessions: [gainageEntry(isoDaysAgo(0), 'interrupted')] },
     })
+    expect(computeCombinedStreak(data, NOW).currentStreak).toBe(0)
+  })
+
+  it('une séance libre pompes terminée compte pour la série', () => {
+    const data = baseData({ pompesFreeHistory: [pompesFreeEntry(isoDaysAgo(0))] })
+    expect(computeCombinedStreak(data, NOW).currentStreak).toBe(1)
+  })
+
+  it('ignore les séances libres pompes non terminées', () => {
+    const data = baseData({ pompesFreeHistory: [pompesFreeEntry(isoDaysAgo(0), 'interrupted')] })
     expect(computeCombinedStreak(data, NOW).currentStreak).toBe(0)
   })
 })

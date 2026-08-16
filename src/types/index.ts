@@ -1,4 +1,4 @@
-import { GainageData } from './plank'
+import { GainageData, PlankSettings } from './plank'
 
 export type Level = 'beginner' | 'intermediate' | 'advanced' | 'elite'
 export type SensorMode = 'tap'
@@ -77,6 +77,34 @@ export interface MaxPerformanceRecord {
   sensorMode: SensorMode
 }
 
+/**
+ * Séance libre Pompes — équivalent de la séance libre Gainage, adapté aux
+ * répétitions : minuteur (AMRAP), chronomètre libre, ou objectif de reps.
+ */
+export type PompesFreeMode = 'timer' | 'stopwatch' | 'target'
+
+export interface PompesFreeSet {
+  order: number
+  mode: PompesFreeMode
+  targetSeconds: number | null
+  targetReps: number | null
+  actualReps: number
+  actualDurationSeconds: number
+  status: 'completed' | 'interrupted'
+}
+
+export interface PompesFreeSession {
+  id: string
+  date: string
+  mode: PompesFreeMode
+  plannedSetCount: number
+  restSeconds: number
+  sets: PompesFreeSet[]
+  totalReps: number
+  actualDurationSeconds: number
+  status: 'completed' | 'interrupted' | 'cancelled'
+}
+
 /** Rappel unique, partagé entre Pompes et Gainage (une seule config au lieu de deux). */
 export interface RemindersSettings {
   enabled: boolean
@@ -99,6 +127,8 @@ export interface AppData {
   preferredSensorMode: SensorMode
   gainage: GainageData
   reminders: RemindersSettings
+  pompesFreeHistory: PompesFreeSession[]
+  pompesAudioSettings: PlankSettings
 }
 
 export interface Badge {

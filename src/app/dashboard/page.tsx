@@ -164,6 +164,21 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
+        {/* ── Séance libre ── */}
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }}>
+          <Link href="/free">
+            <Card className="flex items-center gap-3 hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 rounded-xl bg-brand-50 flex items-center justify-center shrink-0">
+                <Play size={18} className="text-brand-500 ml-0.5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 text-sm">Séance libre</p>
+                <p className="text-xs text-gray-500 mt-0.5">Minuteur, chronomètre libre ou objectif de reps</p>
+              </div>
+            </Card>
+          </Link>
+        </motion.div>
+
         {/* ── Stats grid ── */}
         <motion.div className="grid grid-cols-2 gap-3" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
           <Card>
