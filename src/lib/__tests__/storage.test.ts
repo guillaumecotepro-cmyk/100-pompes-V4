@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { migrateAppData, checkNewBadges, STORAGE_SCHEMA_VERSION, DEFAULT_APP_DATA } from '../storage'
+import { ALL_BADGES } from '../programGenerator'
 
 describe('migrateAppData — non-régression Pompes', () => {
   it('des données Pompes v1 (sans champ gainage) sont préservées intégralement après migration', () => {
@@ -78,5 +79,37 @@ describe('checkNewBadges — comportement Pompes inchangé après généralisati
       earnedBadges: ['first_session'],
     }
     expect(checkNewBadges(data)).not.toContain('first_session')
+  })
+
+  it('catalogue riche et progressif : au moins 30 badges distincts, tous cohérents avec le moteur', () => {
+    const ids = new Set(ALL_BADGES.map(b => b.id))
+    expect(ids.size).toBe(ALL_BADGES.length) // pas de doublon
+    expect(ALL_BADGES.length).toBeGreaterThanOrEqual(30)
+
+    // Tous les seuils au maximum : chaque id retourné doit exister dans le
+    // catalogue (garde-fou contre le mismatch goal_reached/goal_100 corrigé ici).
+    const data = {
+      ...DEFAULT_APP_DATA,
+      stats: { ...DEFAULT_APP_DATA.stats, totalSessions: 1000, currentStreak: 1000, totalPushups: 1_000_000, bestSingleSet: 1000 },
+      profile: { id: 'u', name: 'A', initialTestScore: 1000, level: 'elite' as const, createdAt: '', avatarColor: '#000' },
+      earnedBadges: [],
+    }
+    const badges = checkNewBadges(data)
+    for (const id of badges) expect(ids.has(id)).toBe(true)
+    expect(badges.length).toBe(ALL_BADGES.length) // stats extrêmes -> tous les paliers sont franchis
+  })
+
+  it('débloque les nouveaux paliers étendus (streak, total, séries)', () => {
+    const data = {
+      ...DEFAULT_APP_DATA,
+      stats: { ...DEFAULT_APP_DATA.stats, totalSessions: 1, currentStreak: 14, totalPushups: 50_000, bestSingleSet: 150 },
+      earnedBadges: [],
+    }
+    const badges = checkNewBadges(data)
+    expect(badges).toContain('streak_14')
+    expect(badges).not.toContain('streak_30')
+    expect(badges).toContain('total_50000')
+    expect(badges).not.toContain('total_100000')
+    expect(badges).toContain('best_set_150')
   })
 })

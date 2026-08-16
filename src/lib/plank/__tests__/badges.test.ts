@@ -55,4 +55,20 @@ describe('checkNewPlankBadges', () => {
     expect(checkNewPlankBadges(withSessions([completedSession(30)]), false, NOW)).not.toContain('plank_goal_reached')
     expect(checkNewPlankBadges(withSessions([completedSession(30)]), true, NOW)).toContain('plank_goal_reached')
   })
+
+  it('catalogue riche et progressif : au moins 30 badges distincts', () => {
+    const ids = new Set(ALL_PLANK_BADGES.map(b => b.id))
+    expect(ids.size).toBe(ALL_PLANK_BADGES.length) // pas de doublon
+    expect(ALL_PLANK_BADGES.length).toBeGreaterThanOrEqual(30)
+  })
+
+  it('débloque les nouveaux paliers étendus (record, série, cumul)', () => {
+    const highHold = checkNewPlankBadges(withSessions([completedSession(200)]), false, NOW)
+    expect(highHold).toContain('plank_hold_180')
+    expect(highHold).not.toContain('plank_hold_240')
+
+    const manySessions = withSessions(Array.from({ length: 100 }, (_, i) => completedSession(10, new Date(2026, 0, i + 1).toISOString())))
+    const badges = checkNewPlankBadges(manySessions, false, NOW)
+    expect(badges).toContain('plank_sessions_100')
+  })
 })

@@ -195,19 +195,53 @@ export function updateStats(
 
 export function checkNewBadges(data: AppData): string[] {
   const stats = data.stats
+  const score = data.profile?.initialTestScore ?? 0
   return pickNewlyUnlocked(data.earnedBadges, {
     first_session: stats.totalSessions >= 1,
-    streak_3:      stats.currentStreak >= 3,
-    streak_7:      stats.currentStreak >= 7,
-    streak_30:     stats.currentStreak >= 30,
-    score_10:      (data.profile?.initialTestScore ?? 0) >= 10,
-    score_25:      (data.profile?.initialTestScore ?? 0) >= 25,
-    score_50:      (data.profile?.initialTestScore ?? 0) >= 50,
+
+    streak_3:    stats.currentStreak >= 3,
+    streak_7:    stats.currentStreak >= 7,
+    streak_14:   stats.currentStreak >= 14,
+    streak_30:   stats.currentStreak >= 30,
+    streak_60:   stats.currentStreak >= 60,
+    streak_100:  stats.currentStreak >= 100,
+    streak_365:  stats.currentStreak >= 365,
+
+    score_5:     score >= 5,
+    score_10:    score >= 10,
+    score_15:    score >= 15,
+    score_25:    score >= 25,
+    score_35:    score >= 35,
+    score_50:    score >= 50,
+    score_75:    score >= 75,
+    score_100:   score >= 100,
+
+    total_50:      stats.totalPushups >= 50,
     total_100:     stats.totalPushups >= 100,
+    total_500:     stats.totalPushups >= 500,
     total_1000:    stats.totalPushups >= 1_000,
+    total_2500:    stats.totalPushups >= 2_500,
+    total_5000:    stats.totalPushups >= 5_000,
     total_10000:   stats.totalPushups >= 10_000,
-    session_10:    stats.totalSessions >= 10,
-    goal_100:      stats.bestSingleSet >= 100,
+    total_25000:   stats.totalPushups >= 25_000,
+    total_50000:   stats.totalPushups >= 50_000,
+    total_100000:  stats.totalPushups >= 100_000,
+
+    session_5:   stats.totalSessions >= 5,
+    session_10:  stats.totalSessions >= 10,
+    session_25:  stats.totalSessions >= 25,
+    session_50:  stats.totalSessions >= 50,
+    session_100: stats.totalSessions >= 100,
+    session_250: stats.totalSessions >= 250,
+    session_500: stats.totalSessions >= 500,
+
+    best_set_10:  stats.bestSingleSet >= 10,
+    best_set_25:  stats.bestSingleSet >= 25,
+    best_set_50:  stats.bestSingleSet >= 50,
+    best_set_75:  stats.bestSingleSet >= 75,
+    goal_100:     stats.bestSingleSet >= 100,
+    best_set_150: stats.bestSingleSet >= 150,
+    best_set_200: stats.bestSingleSet >= 200,
   })
 }
 

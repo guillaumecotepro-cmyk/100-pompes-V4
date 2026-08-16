@@ -15,6 +15,22 @@ export function formatClock(totalSeconds: number): string {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`
 }
 
+/**
+ * Durée longue "heures / minutes / secondes" pour des cumuls pouvant
+ * dépasser l'heure (ex. temps total de gainage) : "2 h 15 min", "38 min 12 s", "45 s".
+ * N'affiche que les unités pertinentes.
+ */
+export function formatDurationHMS(totalSeconds: number): string {
+  const s = Math.max(0, Math.round(totalSeconds))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const r = s % 60
+
+  if (h > 0) return m > 0 ? `${h} h ${m} min` : `${h} h`
+  if (m > 0) return r > 0 ? `${m} min ${r} s` : `${m} min`
+  return `${r} s`
+}
+
 export function parseMinutesSecondsInput(minutes: string, seconds: string): number | null {
   const m = minutes.trim() === '' ? 0 : Number(minutes)
   const s = seconds.trim() === '' ? 0 : Number(seconds)

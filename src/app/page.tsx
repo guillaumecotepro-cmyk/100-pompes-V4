@@ -10,7 +10,8 @@ import { useAppData } from '@/hooks/useWorkoutProgram'
 import { getNextSession, getProgressPercent } from '@/lib/programGenerator'
 import { getNextPlankProgramSession, getPlankProgramProgress } from '@/lib/plank/programGenerator'
 import { computePlankStreak } from '@/lib/plank/stats'
-import { formatPlankGoal } from '@/lib/plank/format'
+import { formatPlankGoal, formatDurationHMS } from '@/lib/plank/format'
+import { computePlankTotals } from '@/lib/plank/stats'
 import { computeCombinedStreak, computeCombinedWeekSummary } from '@/lib/combined'
 import { shouldShowReminder } from '@/lib/reminders'
 import { isToday } from '@/lib/utils'
@@ -52,6 +53,10 @@ export default function ActivityChooserPage() {
   const plankProgressPct = activeProgram ? getPlankProgramProgress(activeProgram) : 0
   const { currentStreak } = computePlankStreak(gainage.sessions)
   const lastPlankSession = gainage.sessions[0] ?? null
+
+  // Totaux cumulés toutes activités (programme + libre) pour le bandeau de bas de page.
+  const totalPushupsCumulated = data.stats.totalPushups
+  const totalGainageSeconds = computePlankTotals(gainage.sessions).totalHoldSeconds
 
   return (
     <main className="app-content-page flex flex-col px-4 pt-8 pb-10 gap-5 max-w-md mx-auto w-full">
@@ -183,6 +188,29 @@ export default function ActivityChooserPage() {
           )}
         </Card>
       </motion.button>
+
+      {/* ── Totaux cumulés (toutes activités, programme + libre) ── */}
+      {(totalPushupsCumulated > 0 || totalGainageSeconds > 0) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-2">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-2">Cumul depuis le début</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="text-center">
+              <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center mx-auto mb-1.5">
+                <Dumbbell size={15} className="text-brand-500" />
+              </div>
+              <p className="text-lg font-black text-gray-900">{totalPushupsCumulated.toLocaleString('fr')}</p>
+              <p className="text-[10px] text-gray-500">pompes au total</p>
+            </Card>
+            <Card className="text-center">
+              <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center mx-auto mb-1.5">
+                <Timer size={15} className="text-teal-700" />
+              </div>
+              <p className="text-lg font-black text-gray-900">{formatDurationHMS(totalGainageSeconds)}</p>
+              <p className="text-[10px] text-gray-500">de gainage au total</p>
+            </Card>
+          </div>
+        </motion.div>
+      )}
     </main>
   )
 }
