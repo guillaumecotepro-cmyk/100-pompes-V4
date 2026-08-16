@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { computeCombinedStreak, computeCombinedWeekSummary, getLastActivity } from '../combined'
+import { computeCombinedStreak, computeCombinedWeekSummary, getLastActivity, computeGlobalTotals } from '../combined'
 import { AppData, PompesFreeSession, WorkoutHistory } from '@/types'
 import { DEFAULT_APP_DATA } from '../storage'
 import { PlankSession } from '@/types/plank'
+import { JumpSession } from '@/types/rope'
 
 const NOW = new Date('2026-08-15T18:00:00')
 
@@ -33,10 +34,21 @@ function pompesFreeEntry(date: string, status: PompesFreeSession['status'] = 'co
   }
 }
 
-type CombinedTestData = Pick<AppData, 'history' | 'gainage' | 'pompesFreeHistory'>
+function jumpropeEntry(date: string, status: JumpSession['status'] = 'completed'): JumpSession {
+  return {
+    id: Math.random().toString(36), mode: 'free', date, endDate: date, timezone: 'Europe/Paris',
+    totalDurationSeconds: 120, activeDurationSeconds: 100, totalJumps: 150, avgCadence: 90, maxCadence: 110,
+    caloriesEstimated: 20, heartRateAvg: null, countingMethod: 'manual', countingAlgorithmVersion: 1,
+    series: [], bestStreak: 150, manualCorrection: false, notes: null, journal: null,
+    programId: null, programWorkoutIndex: null, challengeId: null, challengeDay: null,
+    status, clipId: null, virtual: false,
+  }
+}
+
+type CombinedTestData = Pick<AppData, 'history' | 'gainage' | 'pompesFreeHistory' | 'jumprope'>
 
 function baseData(overrides: Partial<CombinedTestData>): CombinedTestData {
-  return { history: [], gainage: DEFAULT_APP_DATA.gainage, pompesFreeHistory: [], ...overrides }
+  return { history: [], gainage: DEFAULT_APP_DATA.gainage, pompesFreeHistory: [], jumprope: DEFAULT_APP_DATA.jumprope, ...overrides }
 }
 
 describe('computeCombinedStreak', () => {
@@ -73,6 +85,40 @@ describe('computeCombinedStreak', () => {
   it('ignore les séances libres pompes non terminées', () => {
     const data = baseData({ pompesFreeHistory: [pompesFreeEntry(isoDaysAgo(0), 'interrupted')] })
     expect(computeCombinedStreak(data, NOW).currentStreak).toBe(0)
+  })
+
+  it('une séance de corde à sauter terminée compte pour la série combinée', () => {
+    const data = baseData({ jumprope: { ...DEFAULT_APP_DATA.jumprope, sessions: [jumpropeEntry(isoDaysAgo(0))] } })
+    expect(computeCombinedStreak(data, NOW).currentStreak).toBe(1)
+  })
+
+  it('les trois activités le même jour ne comptent qu\'une fois', () => {
+    const today = isoDaysAgo(0)
+    const data = baseData({
+      history: [pompesEntry(today)],
+      gainage: { ...DEFAULT_APP_DATA.gainage, sessions: [gainageEntry(today)] },
+      jumprope: { ...DEFAULT_APP_DATA.jumprope, sessions: [jumpropeEntry(today)] },
+    })
+    expect(computeCombinedStreak(data, NOW).currentStreak).toBe(1)
+  })
+})
+
+describe('computeGlobalTotals', () => {
+  it('additionne le nombre de séances et la durée active des trois activités', () => {
+    const data = baseData({
+      history: [pompesEntry(isoDaysAgo(0))],
+      gainage: { ...DEFAULT_APP_DATA.gainage, sessions: [gainageEntry(isoDaysAgo(0))] },
+      jumprope: { ...DEFAULT_APP_DATA.jumprope, sessions: [jumpropeEntry(isoDaysAgo(0))] },
+    })
+    const totals = computeGlobalTotals(data)
+    expect(totals.totalSessions).toBe(3)
+    expect(totals.totalActiveDurationSeconds).toBeGreaterThan(0)
+  })
+
+  it('zéro séance -> zéro total, jamais de valeur inventée', () => {
+    const totals = computeGlobalTotals(baseData({}))
+    expect(totals.totalSessions).toBe(0)
+    expect(totals.totalActiveDurationSeconds).toBe(0)
   })
 })
 

@@ -3,9 +3,10 @@ import { PlankSettings } from '@/types/plank'
 import { ALL_BADGES } from './programGenerator'
 import { migrateGainageData, DEFAULT_GAINAGE_DATA } from './plank/defaults'
 import { DEFAULT_PLANK_SETTINGS } from './plank/config'
+import { migrateJumpRopeData, DEFAULT_JUMPROPE_DATA } from './rope/defaults'
 import { pickNewlyUnlocked } from './utils'
 
-export const STORAGE_SCHEMA_VERSION = 5
+export const STORAGE_SCHEMA_VERSION = 6
 export const STORAGE_KEY = '100pompes_v1'
 export const STORAGE_BACKUP_KEY = '100pompes_v1_backup'
 export const LEGACY_STORAGE_KEYS = ['100pompes_data']
@@ -26,7 +27,7 @@ export const DEFAULT_REMINDERS: RemindersSettings = {
   days: [],
   hour: 18,
   minute: 0,
-  activities: ['pompes', 'gainage'],
+  activities: ['pompes', 'gainage', 'jumprope'],
 }
 
 export const DEFAULT_APP_DATA: AppData = {
@@ -44,6 +45,7 @@ export const DEFAULT_APP_DATA: AppData = {
   reminders: DEFAULT_REMINDERS,
   pompesFreeHistory: [],
   pompesAudioSettings: { ...DEFAULT_PLANK_SETTINGS },
+  jumprope: DEFAULT_JUMPROPE_DATA,
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -76,6 +78,7 @@ export function migrateAppData(raw: unknown): AppData {
       ? candidate.pompesFreeHistory as unknown as PompesFreeSession[]
       : [],
     pompesAudioSettings: migratePompesAudioSettings(candidate.pompesAudioSettings),
+    jumprope: migrateJumpRopeData(candidate.jumprope),
   }
 }
 
@@ -106,7 +109,7 @@ function migrateReminders(candidate: Record<string, unknown>): RemindersSettings
       hour: typeof r.hour === 'number' ? r.hour : DEFAULT_REMINDERS.hour,
       minute: typeof r.minute === 'number' ? r.minute : DEFAULT_REMINDERS.minute,
       activities: Array.isArray(r.activities) && r.activities.length > 0
-        ? r.activities.filter((a): a is 'pompes' | 'gainage' => a === 'pompes' || a === 'gainage')
+        ? r.activities.filter((a): a is 'pompes' | 'gainage' | 'jumprope' => a === 'pompes' || a === 'gainage' || a === 'jumprope')
         : DEFAULT_REMINDERS.activities,
     }
   }

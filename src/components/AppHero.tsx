@@ -58,6 +58,7 @@ function deterministicGainageHero(pathname: string) {
 export function AppHero() {
   const pathname = usePathname()
   const isGainage = pathname === '/gainage' || pathname.startsWith('/gainage/')
+  const isJumprope = pathname === '/jumprope' || pathname.startsWith('/jumprope/')
   const [gainageHero, setGainageHero] = useState(() => deterministicGainageHero(pathname))
 
   // Une fois monté côté client (hydratation terminée), on retire une image
@@ -68,7 +69,11 @@ export function AppHero() {
 
   return (
     <div className="app-hero">
-      {isGainage ? (
+      {isJumprope ? (
+        // Aucune photo dédiée à la corde à sauter n'existe encore dans public/hero — un fond dégradé
+        // à l'accent violet de l'activité évite d'afficher une photo de pompes hors-contexte.
+        <div className="app-hero__image app-hero__image--jumprope" />
+      ) : isGainage ? (
         <img src={gainageHero} alt="" className="app-hero__image" />
       ) : (
         <img src={getHeroImage(pathname)} alt="" className="app-hero__image" />

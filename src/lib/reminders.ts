@@ -3,6 +3,7 @@ import { RemindersSettings } from '@/types'
 export interface ActivityDoneToday {
   pompes: boolean
   gainage: boolean
+  jumprope: boolean
 }
 
 /** Le rappel est-il "dû" à cet instant (jour + heure atteints) ? */

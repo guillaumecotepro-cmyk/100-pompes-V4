@@ -135,6 +135,10 @@ button {
   display: block;
 }
 
+.app-hero__image--jumprope {
+  background: linear-gradient(135deg, #7c3aed, #a78bfa);
+}
+
 .app-hero__shade {
   position: absolute;
   inset: 0;

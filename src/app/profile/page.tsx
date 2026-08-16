@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { motion } from 'framer-motion'
 import {
   Camera, User, Settings, ChevronLeft, ChevronRight, Award, BarChart2, History,
-  X, Dumbbell, Timer, Flame, BookOpen, Play,
+  X, Dumbbell, Timer, Flame, BookOpen, Play, Zap,
 } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { useAppData } from '@/hooks/useWorkoutProgram'
@@ -15,6 +15,9 @@ import { ALL_PLANK_BADGES } from '@/lib/plank/badges'
 import { computePlankTotals, computeBestContinuousHold, computePlankStreak } from '@/lib/plank/stats'
 import { computeCombinedStreak } from '@/lib/combined'
 import { formatPlankGoal } from '@/lib/plank/format'
+import { ALL_JUMP_BADGES } from '@/lib/rope/badges'
+import { computeJumpTotals, computeJumpStreak, computeBestSessionJumps } from '@/lib/rope/stats'
+import { formatJumps, formatDurationHMS as formatJumpDurationHMS } from '@/lib/rope/format'
 
 export default function ProfilePage() {
   const router = useRouter()
@@ -53,13 +56,17 @@ export default function ProfilePage() {
     </div>
   )
 
-  const { profile, stats, earnedBadges, gainage } = data
+  const { profile, stats, earnedBadges, gainage, jumprope } = data
   const pompesBadges = ALL_BADGES.map(b => ({ ...b, earned: earnedBadges.includes(b.id) }))
   const gainageBadges = ALL_PLANK_BADGES.map(b => ({ ...b, earned: gainage.earnedBadges.includes(b.id) }))
   const gainageTotals = computePlankTotals(gainage.sessions)
   const gainageBestHold = computeBestContinuousHold(gainage.sessions, gainage.tests)
   const { currentStreak: gainageStreak } = computePlankStreak(gainage.sessions)
   const { currentStreak: combinedStreak } = computeCombinedStreak(data)
+  const jumpBadges = ALL_JUMP_BADGES.map(b => ({ ...b, earned: jumprope.earnedBadges.includes(b.id) }))
+  const jumpTotals = computeJumpTotals(jumprope.sessions)
+  const jumpBestSession = computeBestSessionJumps(jumprope.sessions)
+  const { currentStreak: jumpStreak } = computeJumpStreak(jumprope.sessions)
 
   return (
     <div className="app-content-page bg-gray-50">
@@ -287,6 +294,103 @@ export default function ProfilePage() {
           )}
         </section>
 
+        {/* ── Corde à sauter ── */}
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center shrink-0">
+              <Zap size={14} className="text-white" />
+            </div>
+            <h2 className="font-black text-gray-900">Corde à sauter</h2>
+          </div>
+
+          {!jumprope.onboarded ? (
+            <Card className="text-center py-8 bg-violet-50 border-violet-200">
+              <p className="text-3xl mb-2">🪢</p>
+              <p className="text-sm font-semibold text-violet-800 mb-1">Pas encore commencé</p>
+              <p className="text-xs text-violet-600 mb-4">Compte tes sauts par caméra, mouvement ou manuellement.</p>
+              <Link href="/jumprope/onboarding">
+                <button className="inline-flex items-center gap-1.5 text-sm font-bold text-white bg-violet-600 px-4 py-2 rounded-xl">
+                  <Play size={14} /> Commencer
+                </button>
+              </Link>
+            </Card>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Séances', value: jumpTotals.totalSessions },
+                  { label: 'Total sauts', value: formatJumps(jumpTotals.totalJumps) },
+                  { label: 'Record', value: formatJumps(jumpBestSession) },
+                ].map(({ label, value }) => (
+                  <Card key={label} className="text-center">
+                    <p className="text-xl font-black text-gray-900">{value}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                  </Card>
+                ))}
+              </div>
+
+              {jumpTotals.totalActiveDurationSeconds > 0 && (
+                <Card className="bg-gray-50 border-none flex items-center justify-between">
+                  <span className="text-xs text-gray-500">Temps actif cumulé</span>
+                  <span className="text-sm font-bold text-gray-900">{formatJumpDurationHMS(jumpTotals.totalActiveDurationSeconds)}</span>
+                </Card>
+              )}
+
+              {jumpStreak > 0 && (
+                <Card className="bg-violet-50 border-violet-100 flex items-center gap-2">
+                  <Flame size={14} className="text-violet-600" />
+                  <p className="text-xs font-semibold text-violet-800">{jumpStreak} jour{jumpStreak > 1 ? 's' : ''} de suite en corde à sauter</p>
+                </Card>
+              )}
+
+              <Card>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
+                    <Award size={16} className="text-amber-500" /> Badges
+                  </p>
+                  <span className="text-xs text-gray-400">{jumprope.earnedBadges.length} / {ALL_JUMP_BADGES.length}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {jumpBadges.filter(b => b.earned).slice(0, 8).map(b => (
+                    <motion.div
+                      key={b.id}
+                      whileTap={{ scale: 0.93 }}
+                      className="flex flex-col items-center p-2 rounded-xl text-center"
+                      title={b.description}
+                    >
+                      <span className="text-2xl">{b.icon}</span>
+                      <p className="text-[9px] text-gray-600 mt-1 leading-tight">{b.name}</p>
+                    </motion.div>
+                  ))}
+                  {jumpBadges.filter(b => b.earned).length === 0 && (
+                    <p className="col-span-4 text-xs text-gray-400 text-center py-2">Aucun badge débloqué pour l&apos;instant.</p>
+                  )}
+                </div>
+                <Link href="/jumprope/badges" className="block mt-2 text-xs font-semibold text-violet-600 text-center">
+                  Voir tous les badges →
+                </Link>
+              </Card>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Link href="/jumprope/history">
+                  <Card className="flex items-center gap-2.5 hover:bg-gray-50 transition-colors">
+                    <History size={16} className="text-gray-400 shrink-0" />
+                    <span className="flex-1 text-xs font-medium text-gray-800">Historique</span>
+                    <ChevronRight size={14} className="text-gray-300 shrink-0" />
+                  </Card>
+                </Link>
+                <Link href="/jumprope/stats">
+                  <Card className="flex items-center gap-2.5 hover:bg-gray-50 transition-colors">
+                    <BarChart2 size={16} className="text-gray-400 shrink-0" />
+                    <span className="flex-1 text-xs font-medium text-gray-800">Statistiques</span>
+                    <ChevronRight size={14} className="text-gray-300 shrink-0" />
+                  </Card>
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+
         {/* ── Réglages ── */}
         <section className="flex flex-col gap-2">
           <Link href="/account">
@@ -315,6 +419,12 @@ export default function ProfilePage() {
               </Card>
             </Link>
           </div>
+          <Link href="/jumprope/settings">
+            <Card className="flex items-center gap-2.5 hover:bg-gray-50 transition-colors">
+              <span className="flex-1 text-xs font-medium text-gray-800">Réglages Corde à sauter</span>
+              <ChevronRight size={14} className="text-gray-300 shrink-0" />
+            </Card>
+          </Link>
         </section>
       </div>
     </div>

@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest'
-import { isReminderDueNow, shouldShowReminder } from '../reminders'
+import { isReminderDueNow, shouldShowReminder, ActivityDoneToday } from '../reminders'
 import { RemindersSettings } from '@/types'
 
 function reminders(overrides: Partial<RemindersSettings> = {}): RemindersSettings {
   return { enabled: true, days: [6], hour: 18, minute: 0, activities: ['pompes', 'gainage'], ...overrides }
+}
+
+function done(overrides: Partial<ActivityDoneToday> = {}): ActivityDoneToday {
+  return { pompes: false, gainage: false, jumprope: false, ...overrides }
 }
 
 // Samedi 15 août 2026
@@ -32,25 +36,31 @@ describe('isReminderDueNow', () => {
 })
 
 describe('shouldShowReminder', () => {
-  it('ne montre rien si les deux activités choisies sont déjà faites', () => {
+  it('ne montre rien si toutes les activités choisies sont déjà faites', () => {
     const r = reminders()
-    expect(shouldShowReminder(r, { pompes: true, gainage: true }, SATURDAY_1859)).toBe(false)
+    expect(shouldShowReminder(r, done({ pompes: true, gainage: true }), SATURDAY_1859)).toBe(false)
   })
 
   it('montre le rappel si au moins une activité choisie manque', () => {
     const r = reminders()
-    expect(shouldShowReminder(r, { pompes: true, gainage: false }, SATURDAY_1859)).toBe(true)
-    expect(shouldShowReminder(r, { pompes: false, gainage: true }, SATURDAY_1859)).toBe(true)
+    expect(shouldShowReminder(r, done({ pompes: true, gainage: false }), SATURDAY_1859)).toBe(true)
+    expect(shouldShowReminder(r, done({ pompes: false, gainage: true }), SATURDAY_1859)).toBe(true)
   })
 
   it('ne considère que les activités sélectionnées dans les réglages', () => {
     const r = reminders({ activities: ['gainage'] })
     // Pompes non fait, mais pas sélectionné -> ne doit pas déclencher
-    expect(shouldShowReminder(r, { pompes: false, gainage: true }, SATURDAY_1859)).toBe(false)
-    expect(shouldShowReminder(r, { pompes: true, gainage: false }, SATURDAY_1859)).toBe(true)
+    expect(shouldShowReminder(r, done({ pompes: false, gainage: true }), SATURDAY_1859)).toBe(false)
+    expect(shouldShowReminder(r, done({ pompes: true, gainage: false }), SATURDAY_1859)).toBe(true)
+  })
+
+  it('prend en compte la corde à sauter', () => {
+    const r = reminders({ activities: ['jumprope'] })
+    expect(shouldShowReminder(r, done({ pompes: true, gainage: true, jumprope: false }), SATURDAY_1859)).toBe(true)
+    expect(shouldShowReminder(r, done({ pompes: true, gainage: true, jumprope: true }), SATURDAY_1859)).toBe(false)
   })
 
   it('rien si le rappel n\'est pas dû', () => {
-    expect(shouldShowReminder(reminders(), { pompes: false, gainage: false }, SATURDAY_1759)).toBe(false)
+    expect(shouldShowReminder(reminders(), done(), SATURDAY_1759)).toBe(false)
   })
 })

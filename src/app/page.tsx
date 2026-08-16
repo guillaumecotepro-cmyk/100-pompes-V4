@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ChevronRight, Dumbbell, Timer, Flame, Trophy, Settings, Bell, X, User } from 'lucide-react'
+import { ChevronRight, Dumbbell, Timer, Flame, Trophy, Settings, Bell, X, User, Zap } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Progress } from '@/components/ui/Progress'
 import { useAppData } from '@/hooks/useWorkoutProgram'
@@ -15,6 +15,10 @@ import { computePlankTotals } from '@/lib/plank/stats'
 import { computeCombinedStreak, computeCombinedWeekSummary } from '@/lib/combined'
 import { shouldShowReminder } from '@/lib/reminders'
 import { isToday } from '@/lib/utils'
+import { getJumpProgram } from '@/lib/rope/programs'
+import { getNextWorkout, getProgramProgressPercent } from '@/lib/rope/programProgress'
+import { computeJumpTotals, computeJumpStreak } from '@/lib/rope/stats'
+import { formatJumps } from '@/lib/rope/format'
 
 export default function ActivityChooserPage() {
   const router = useRouter()
@@ -27,7 +31,8 @@ export default function ActivityChooserPage() {
 
   const pompesDoneToday = hydrated && data.history.some(h => h.completed && isToday(h.date))
   const gainageDoneToday = hydrated && data.gainage.sessions.some(s => s.status === 'completed' && isToday(s.date))
-  const reminderDue = hydrated && shouldShowReminder(data.reminders, { pompes: pompesDoneToday, gainage: gainageDoneToday })
+  const jumpropeDoneToday = hydrated && data.jumprope.sessions.some(s => s.status === 'completed' && isToday(s.date))
+  const reminderDue = hydrated && shouldShowReminder(data.reminders, { pompes: pompesDoneToday, gainage: gainageDoneToday, jumprope: jumpropeDoneToday })
 
   useEffect(() => {
     if (!reminderDue || notifiedRef.current) return
@@ -54,15 +59,24 @@ export default function ActivityChooserPage() {
   const { currentStreak } = computePlankStreak(gainage.sessions)
   const lastPlankSession = gainage.sessions[0] ?? null
 
+  const jumprope = data.jumprope
+  const jumpActiveProgram = jumprope.activeProgramId ? getJumpProgram(jumprope.activeProgramId) : null
+  const jumpActiveProgress = jumprope.activeProgramId ? jumprope.programProgress[jumprope.activeProgramId] : null
+  const nextJumpWorkout = jumpActiveProgram ? getNextWorkout(jumpActiveProgram, jumpActiveProgress) : null
+  const jumpProgressPct = jumpActiveProgram ? getProgramProgressPercent(jumpActiveProgram, jumpActiveProgress) : 0
+  const { currentStreak: jumpCurrentStreak } = computeJumpStreak(jumprope.sessions)
+  const jumpTotals = computeJumpTotals(jumprope.sessions)
+
   // Totaux cumulés toutes activités (programme + libre) pour le bandeau de bas de page.
   const totalPushupsCumulated = data.stats.totalPushups
   const totalGainageSeconds = computePlankTotals(gainage.sessions).totalHoldSeconds
+  const totalJumpsCumulated = jumpTotals.totalJumps
 
   return (
     <main className="app-content-page flex flex-col px-4 pt-8 pb-10 gap-5 max-w-md mx-auto w-full">
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative text-center mb-1">
         <h1 className="text-2xl font-black text-gray-900">Choisis ton activité</h1>
-        <p className="text-sm text-gray-500 mt-1">Tu peux basculer entre les deux à tout moment.</p>
+        <p className="text-sm text-gray-500 mt-1">Tu peux basculer entre les trois à tout moment.</p>
         <div className="absolute right-0 top-0 flex items-center gap-1">
           <Link href="/profile" aria-label="Mon profil" className="p-2 rounded-xl hover:bg-gray-100">
             <User size={18} className="text-gray-400" />
@@ -189,24 +203,76 @@ export default function ActivityChooserPage() {
         </Card>
       </motion.button>
 
+      {/* ── Carte Corde à sauter ── */}
+      <motion.button
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.13 }}
+        onClick={() => router.push(jumprope.onboarded ? '/jumprope' : '/jumprope/onboarding')}
+        className="text-left"
+      >
+        <Card elevated padding="lg" className="border-2 border-violet-100 hover:border-violet-300 transition-colors">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-11 h-11 rounded-2xl bg-violet-600 flex items-center justify-center shrink-0 shadow-md shadow-violet-200">
+              <Zap size={22} className="text-white" />
+            </div>
+            <div className="flex-1">
+              <p className="font-black text-lg text-gray-900">Corde à sauter</p>
+              <p className="text-xs text-gray-500">Programme, défis et progression</p>
+            </div>
+            <ChevronRight size={20} className="text-gray-300 shrink-0" />
+          </div>
+
+          {jumprope.onboarded ? (
+            <div className="mt-2 flex flex-col gap-1.5">
+              {nextJumpWorkout && (
+                <>
+                  <Progress value={jumpProgressPct} height="sm" color="bg-violet-600" className="mb-1" />
+                  <p className="text-xs text-gray-500">Prochaine séance : {nextJumpWorkout.title}</p>
+                </>
+              )}
+              <div className="flex items-center gap-3 mt-0.5">
+                {jumpCurrentStreak > 0 && (
+                  <span className="flex items-center gap-1 text-xs text-violet-700 font-semibold bg-violet-50 px-2 py-1 rounded-full">
+                    <Flame size={12} /> {jumpCurrentStreak} j
+                  </span>
+                )}
+                {jumprope.sessions[0] && (
+                  <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <Trophy size={12} className="text-amber-500" /> Dernière : {formatJumps(jumprope.sessions[0].totalJumps)} sauts
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs font-semibold text-violet-600 mt-1">Commencer →</p>
+          )}
+        </Card>
+      </motion.button>
+
       {/* ── Totaux cumulés (toutes activités, programme + libre) ── */}
-      {(totalPushupsCumulated > 0 || totalGainageSeconds > 0) && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="mt-2">
+      {(totalPushupsCumulated > 0 || totalGainageSeconds > 0 || totalJumpsCumulated > 0) && (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="mt-2">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-2">Cumul depuis le début</p>
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="text-center">
+          <div className="grid grid-cols-3 gap-2.5">
+            <Card className="text-center" padding="sm">
               <div className="w-8 h-8 rounded-lg bg-brand-50 flex items-center justify-center mx-auto mb-1.5">
                 <Dumbbell size={15} className="text-brand-500" />
               </div>
-              <p className="text-lg font-black text-gray-900">{totalPushupsCumulated.toLocaleString('fr')}</p>
-              <p className="text-[10px] text-gray-500">pompes au total</p>
+              <p className="text-base font-black text-gray-900">{totalPushupsCumulated.toLocaleString('fr')}</p>
+              <p className="text-[9px] text-gray-500">pompes</p>
             </Card>
-            <Card className="text-center">
+            <Card className="text-center" padding="sm">
               <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center mx-auto mb-1.5">
                 <Timer size={15} className="text-teal-700" />
               </div>
-              <p className="text-lg font-black text-gray-900">{formatDurationHMS(totalGainageSeconds)}</p>
-              <p className="text-[10px] text-gray-500">de gainage au total</p>
+              <p className="text-base font-black text-gray-900">{formatDurationHMS(totalGainageSeconds)}</p>
+              <p className="text-[9px] text-gray-500">de gainage</p>
+            </Card>
+            <Card className="text-center" padding="sm">
+              <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center mx-auto mb-1.5">
+                <Zap size={15} className="text-violet-600" />
+              </div>
+              <p className="text-base font-black text-gray-900">{formatJumps(totalJumpsCumulated)}</p>
+              <p className="text-[9px] text-gray-500">sauts</p>
             </Card>
           </div>
         </motion.div>

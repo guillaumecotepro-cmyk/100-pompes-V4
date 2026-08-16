@@ -1,10 +1,11 @@
 import { GainageData, PlankSettings } from './plank'
+import { JumpRopeData } from './rope'
 
 export type Level = 'beginner' | 'intermediate' | 'advanced' | 'elite'
 export type SensorMode = 'tap'
 export type RhythmQuality = 'fast' | 'good' | 'slow' | 'idle'
 export type WorkoutPhase = 'preparing' | 'active' | 'resting' | 'completed' | 'paused'
-export type ActivityType = 'pompes' | 'gainage'
+export type ActivityType = 'pompes' | 'gainage' | 'jumprope'
 
 export interface UserProfile {
   id: string
@@ -129,6 +130,7 @@ export interface AppData {
   reminders: RemindersSettings
   pompesFreeHistory: PompesFreeSession[]
   pompesAudioSettings: PlankSettings
+  jumprope: JumpRopeData
 }
 
 export interface Badge {

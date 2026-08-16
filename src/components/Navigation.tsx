@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Play, TrendingUp, User, History } from 'lucide-react'
+import { LayoutDashboard, Play, TrendingUp, User, History, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
@@ -19,20 +19,27 @@ const GAINAGE_NAV_ITEMS = [
   { href: '/profile',         label: 'Profil',     Icon: User },
 ]
 
+const JUMPROPE_NAV_ITEMS = [
+  { href: '/jumprope',         label: 'Accueil',    Icon: LayoutDashboard },
+  { href: '/jumprope/start',   label: 'Séance',     Icon: Timer },
+  { href: '/jumprope/history', label: 'Historique', Icon: History },
+  { href: '/profile',          label: 'Profil',     Icon: User },
+]
+
 interface NavigationProps {
-  /** 'pompes' (défaut, comportement historique inchangé) ou 'gainage'. */
-  space?: 'pompes' | 'gainage'
+  /** 'pompes' (défaut, comportement historique inchangé), 'gainage' ou 'jumprope'. */
+  space?: 'pompes' | 'gainage' | 'jumprope'
 }
 
 export function Navigation({ space = 'pompes' }: NavigationProps) {
   const pathname = usePathname()
-  const NAV_ITEMS = space === 'gainage' ? GAINAGE_NAV_ITEMS : POMPES_NAV_ITEMS
+  const NAV_ITEMS = space === 'gainage' ? GAINAGE_NAV_ITEMS : space === 'jumprope' ? JUMPROPE_NAV_ITEMS : POMPES_NAV_ITEMS
 
   return (
     <nav className="bottom-nav fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-100">
       <div className="grid grid-cols-4 max-w-md mx-auto">
         {NAV_ITEMS.map(({ href, label, Icon }) => {
-          const isRoot = href === '/dashboard' || href === '/gainage'
+          const isRoot = href === '/dashboard' || href === '/gainage' || href === '/jumprope'
           const active = pathname === href || (!isRoot && pathname.startsWith(href + '/'))
           return (
             <Link key={href} href={href}
