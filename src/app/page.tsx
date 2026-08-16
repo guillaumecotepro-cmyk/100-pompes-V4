@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ChevronRight, Dumbbell, Timer, Flame, Trophy, Settings, Bell, X } from 'lucide-react'
+import { ChevronRight, Dumbbell, Timer, Flame, Trophy, Settings, Bell, X, User } from 'lucide-react'
 import { Card } from '@/components/ui/Card'
 import { Progress } from '@/components/ui/Progress'
 import { useAppData } from '@/hooks/useWorkoutProgram'
@@ -58,9 +58,14 @@ export default function ActivityChooserPage() {
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="relative text-center mb-1">
         <h1 className="text-2xl font-black text-gray-900">Choisis ton activité</h1>
         <p className="text-sm text-gray-500 mt-1">Tu peux basculer entre les deux à tout moment.</p>
-        <Link href="/account" aria-label="Compte et réglages" className="absolute right-0 top-0 p-2 rounded-xl hover:bg-gray-100">
-          <Settings size={18} className="text-gray-400" />
-        </Link>
+        <div className="absolute right-0 top-0 flex items-center gap-1">
+          <Link href="/profile" aria-label="Mon profil" className="p-2 rounded-xl hover:bg-gray-100">
+            <User size={18} className="text-gray-400" />
+          </Link>
+          <Link href="/account" aria-label="Compte et réglages" className="p-2 rounded-xl hover:bg-gray-100">
+            <Settings size={18} className="text-gray-400" />
+          </Link>
+        </div>
       </motion.div>
 
       {reminderDue && !reminderDismissed && (
@@ -77,17 +82,23 @@ export default function ActivityChooserPage() {
 
       {combinedStreak && weekSummary && (combinedStreak.currentStreak > 0 || weekSummary.activeDaysThisWeek > 0) && (
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.02 }}>
-          <Card className="bg-gray-900 text-white flex items-center justify-around py-3">
-            <div className="text-center">
-              <p className="text-xl font-black">{combinedStreak.currentStreak}</p>
-              <p className="text-[10px] text-white/60 uppercase tracking-wide">jour{combinedStreak.currentStreak > 1 ? 's' : ''} de suite</p>
-            </div>
-            <div className="w-px h-8 bg-white/15" />
-            <div className="text-center">
-              <p className="text-xl font-black">{weekSummary.activeDaysThisWeek}/7</p>
-              <p className="text-[10px] text-white/60 uppercase tracking-wide">jours cette semaine</p>
-            </div>
-          </Card>
+          <Link href="/profile">
+            <Card className="bg-gray-900 text-white flex items-center justify-around py-3 hover:bg-gray-800 transition-colors">
+              <div className="text-center">
+                <p className="text-xl font-black">{combinedStreak.currentStreak}</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wide">jour{combinedStreak.currentStreak > 1 ? 's' : ''} de suite</p>
+              </div>
+              <div className="w-px h-8 bg-white/15" />
+              <div className="text-center">
+                <p className="text-xl font-black">{weekSummary.activeDaysThisWeek}/7</p>
+                <p className="text-[10px] text-white/60 uppercase tracking-wide">jours cette semaine</p>
+              </div>
+              <div className="w-px h-8 bg-white/15" />
+              <div className="flex items-center gap-1 text-white/70 text-xs font-semibold">
+                Profil <ChevronRight size={14} />
+              </div>
+            </Card>
+          </Link>
         </motion.div>
       )}
 

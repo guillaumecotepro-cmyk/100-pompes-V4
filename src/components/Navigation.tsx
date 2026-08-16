@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Play, TrendingUp, User, History, Award } from 'lucide-react'
+import { LayoutDashboard, Play, TrendingUp, User, History } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { motion } from 'framer-motion'
 
@@ -16,7 +16,7 @@ const GAINAGE_NAV_ITEMS = [
   { href: '/gainage',         label: 'Accueil',    Icon: LayoutDashboard },
   { href: '/gainage/free',    label: 'Libre',      Icon: Play },
   { href: '/gainage/history', label: 'Historique', Icon: History },
-  { href: '/gainage/badges',  label: 'Badges',     Icon: Award },
+  { href: '/profile',         label: 'Profil',     Icon: User },
 ]
 
 interface NavigationProps {
