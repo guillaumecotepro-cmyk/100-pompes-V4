@@ -46,9 +46,12 @@ export const DEFAULT_POSE_COUNTER_CONFIG: PoseCounterConfig = {
   minJumpIntervalMs: Math.ceil(60_000 / MAX_PLAUSIBLE_CADENCE),
   maxLateralVelocity: 0.35,
   maxArmOnlyMovement: 0.6,
-  takeoffThresholdFactor: 0.12,
-  airborneThresholdFactor: 0.22,
-  groundBandFactor: 0.05,
+  // Un saut à la corde ne décolle que de ~3 à 8 cm (contrairement à un grand saut vertical) : les
+  // seuils doivent rester proportionnellement petits par rapport à bodyScale (hauteur épaules→chevilles
+  // dans le cadre), sous peine de ne jamais détecter de sauts réels.
+  takeoffThresholdFactor: 0.025,
+  airborneThresholdFactor: 0.04,
+  groundBandFactor: 0.015,
   smoothingAlpha: 0.85,
 }
 

@@ -20,7 +20,11 @@ function standingFrames(durationMs: number, startT = 0, overrides: Partial<PoseF
   }))
 }
 
-/** Génère une séquence de sauts périodiques (une "bosse" sinusoïdale par cycle = un saut). */
+/**
+ * Génère une séquence de sauts périodiques (une "bosse" sinusoïdale par cycle = un saut).
+ * Amplitude par défaut 0.08 : un saut à la corde ne décolle que de ~3-8cm du sol (contrairement
+ * à un grand saut vertical) — voir DEFAULT_POSE_COUNTER_CONFIG pour le raisonnement complet.
+ */
 function jumpFrames(opts: {
   cadence: number // sauts / minute
   durationMs: number
@@ -29,7 +33,7 @@ function jumpFrames(opts: {
   overrides?: Partial<PoseFrame>
 }): PoseFrame[] {
   const startT = opts.startT ?? 0
-  const amplitudeFactor = opts.amplitudeFactor ?? 0.35
+  const amplitudeFactor = opts.amplitudeFactor ?? 0.08
   const cyclePeriodMs = 60_000 / opts.cadence
   const n = Math.floor(opts.durationMs / FRAME_MS)
   return Array.from({ length: n }, (_, i) => {
@@ -94,10 +98,22 @@ describe('PoseJumpCounter — rejets (pas de faux positifs)', () => {
   it('flexions simples (amplitude insuffisante) : aucun saut compté', () => {
     const frames = [
       ...standingFrames(500),
-      ...jumpFrames({ cadence: 80, durationMs: 3000, startT: 500, amplitudeFactor: 0.05 }), // sous airborneThresholdFactor (0.22)
+      ...jumpFrames({ cadence: 80, durationMs: 3000, startT: 500, amplitudeFactor: 0.015 }), // sous airborneThresholdFactor (0.04)
     ]
     const result = simulatePoseSequence(frames)
     expect(result.jumpTimestamps).toHaveLength(0)
+  })
+
+  it('petit saut à la corde réaliste (amplitude ~5%, ≈4-5cm) : compté normalement', () => {
+    // Un saut à la corde décolle typiquement de 3 à 8cm (contrairement à un grand saut vertical
+    // de type test physique) — ce test protège contre une re-calibration trop stricte qui rendrait
+    // le comptage caméra inutilisable en usage réel, comme observé avant ce correctif.
+    const frames = [
+      ...standingFrames(500),
+      ...jumpFrames({ cadence: 100, durationMs: 3000, startT: 500, amplitudeFactor: 0.05 }),
+    ]
+    const result = simulatePoseSequence(frames)
+    expect(result.jumpTimestamps.length).toBeGreaterThan(0)
   })
 
   it('mouvement de bras seul (corps immobile) : aucun saut compté', () => {
