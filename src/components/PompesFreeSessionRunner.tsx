@@ -17,22 +17,32 @@ const DEFAULT_REST_SECONDS = 60
 
 type Phase = 'config' | 'prepare' | 'active' | 'resting' | 'confirm' | 'done'
 
+export interface PompesFreeConfig {
+  mode: PompesFreeMode
+  targetSeconds: number
+  targetReps: number
+  setCount: number
+  restSeconds: number
+}
+
 interface PompesFreeSessionRunnerProps {
   baseSettings: PlankSettings
   personalBest: number
+  initialConfig?: PompesFreeConfig
+  autoStart?: boolean
   onStarted: () => void
-  onComplete: (mode: PompesFreeMode, restSeconds: number, sets: PompesFreeSet[], status: 'completed' | 'interrupted') => void
+  onComplete: (mode: PompesFreeMode, restSeconds: number, sets: PompesFreeSet[], status: 'completed' | 'interrupted', config: PompesFreeConfig) => void
   onCancel: () => void
 }
 
-export function PompesFreeSessionRunner({ baseSettings, personalBest, onStarted, onComplete, onCancel }: PompesFreeSessionRunnerProps) {
+export function PompesFreeSessionRunner({ baseSettings, personalBest, initialConfig, autoStart, onStarted, onComplete, onCancel }: PompesFreeSessionRunnerProps) {
   const [phase, setPhase] = useState<Phase>('config')
-  const [mode, setMode] = useState<PompesFreeMode>('timer')
-  const [targetSeconds, setTargetSeconds] = useState(30)
+  const [mode, setMode] = useState<PompesFreeMode>(initialConfig?.mode ?? 'timer')
+  const [targetSeconds, setTargetSeconds] = useState(initialConfig?.targetSeconds ?? 30)
   const [customSeconds, setCustomSeconds] = useState('')
-  const [targetReps, setTargetReps] = useState(20)
-  const [setCount, setSetCount] = useState(1)
-  const [restSeconds, setRestSeconds] = useState(DEFAULT_REST_SECONDS)
+  const [targetReps, setTargetReps] = useState(initialConfig?.targetReps ?? 20)
+  const [setCount, setSetCount] = useState(initialConfig?.setCount ?? 1)
+  const [restSeconds, setRestSeconds] = useState(initialConfig?.restSeconds ?? DEFAULT_REST_SECONDS)
   const [localSettings, setLocalSettings] = useState<PlankSettings>(baseSettings)
 
   const [setIndex, setSetIndex] = useState(0)
@@ -136,14 +146,19 @@ export function PompesFreeSessionRunner({ baseSettings, personalBest, onStarted,
   }
 
   const abortSession = () => {
-    onComplete(mode, restSeconds, completedSets, 'interrupted')
+    onComplete(mode, restSeconds, completedSets, 'interrupted', { mode, targetSeconds, targetReps, setCount, restSeconds })
   }
 
   const confirmAndSave = () => {
     const allCompleted = completedSets.every(s => s.status === 'completed')
-    onComplete(mode, restSeconds, completedSets, allCompleted ? 'completed' : 'interrupted')
+    onComplete(mode, restSeconds, completedSets, allCompleted ? 'completed' : 'interrupted', { mode, targetSeconds, targetReps, setCount, restSeconds })
     setPhase('done')
   }
+
+  useEffect(() => {
+    if (autoStart) start()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const totalReps = completedSets.filter(s => s.status === 'completed').reduce((s, x) => s + x.actualReps, 0)
 

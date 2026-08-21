@@ -20,22 +20,32 @@ const VARIANT_LABELS: Record<PlankVariant, string> = {
 
 type Phase = 'config' | 'prepare' | 'active' | 'resting' | 'confirm' | 'done'
 
+export interface PlankFreeConfig {
+  timerMode: PlankTimerMode
+  targetSeconds: number
+  setCount: number
+  restSeconds: number
+  variant: PlankVariant
+}
+
 interface FreeSessionRunnerProps {
   baseSettings: PlankSettings
+  initialConfig?: PlankFreeConfig
+  autoStart?: boolean
   onStarted: () => void
-  onComplete: (sets: PlankSet[], durationSeconds: number, restSeconds: number, status: 'completed' | 'interrupted') => void
+  onComplete: (sets: PlankSet[], durationSeconds: number, restSeconds: number, status: 'completed' | 'interrupted', config: PlankFreeConfig) => void
   onCancel: () => void
 }
 
-export function FreeSessionRunner({ baseSettings, onStarted, onComplete, onCancel }: FreeSessionRunnerProps) {
+export function FreeSessionRunner({ baseSettings, initialConfig, autoStart, onStarted, onComplete, onCancel }: FreeSessionRunnerProps) {
   const [phase, setPhase] = useState<Phase>('config')
-  const [timerMode, setTimerMode] = useState<PlankTimerMode>('countdown')
-  const [targetSeconds, setTargetSeconds] = useState<number>(45)
+  const [timerMode, setTimerMode] = useState<PlankTimerMode>(initialConfig?.timerMode ?? 'countdown')
+  const [targetSeconds, setTargetSeconds] = useState<number>(initialConfig?.targetSeconds ?? 45)
   const [customMin, setCustomMin] = useState('')
   const [customSec, setCustomSec] = useState('')
-  const [setCount, setSetCount] = useState(1)
-  const [restSeconds, setRestSeconds] = useState(DEFAULT_REST_SECONDS)
-  const [variant, setVariant] = useState<PlankVariant>('forearm')
+  const [setCount, setSetCount] = useState(initialConfig?.setCount ?? 1)
+  const [restSeconds, setRestSeconds] = useState(initialConfig?.restSeconds ?? DEFAULT_REST_SECONDS)
+  const [variant, setVariant] = useState<PlankVariant>(initialConfig?.variant ?? 'forearm')
   const [localSettings, setLocalSettings] = useState<PlankSettings>(baseSettings)
 
   const [setIndex, setSetIndex] = useState(0)
@@ -116,15 +126,20 @@ export function FreeSessionRunner({ baseSettings, onStarted, onComplete, onCance
 
   const abortSession = () => {
     const durationSeconds = sessionStart.current ? Math.round((Date.now() - sessionStart.current) / 1000) : 0
-    onComplete(completedSets, durationSeconds, restSeconds, 'interrupted')
+    onComplete(completedSets, durationSeconds, restSeconds, 'interrupted', { timerMode, targetSeconds, setCount, restSeconds, variant })
   }
 
   const confirmAndSave = () => {
     const durationSeconds = Math.round((Date.now() - sessionStart.current) / 1000)
     const allCompleted = completedSets.every(s => s.status === 'completed')
-    onComplete(completedSets, durationSeconds, restSeconds, allCompleted ? 'completed' : 'interrupted')
+    onComplete(completedSets, durationSeconds, restSeconds, allCompleted ? 'completed' : 'interrupted', { timerMode, targetSeconds, setCount, restSeconds, variant })
     setPhase('done')
   }
+
+  useEffect(() => {
+    if (autoStart) start()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="flex flex-col h-full">

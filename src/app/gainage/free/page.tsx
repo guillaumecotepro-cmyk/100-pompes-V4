@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
-import { FreeSessionRunner } from '@/components/gainage/FreeSessionRunner'
+import { FreeSessionRunner, PlankFreeConfig } from '@/components/gainage/FreeSessionRunner'
 import { usePlankData } from '@/hooks/plank/usePlankData'
 import { ALL_PLANK_BADGES } from '@/lib/plank/badges'
 import { formatPlankGoal } from '@/lib/plank/format'
@@ -14,6 +14,8 @@ export default function GainageFreePage() {
   const router = useRouter()
   const { hydrated, gainage, recordSession, saveDraftSession } = usePlankData()
   const [result, setResult] = useState<{ totalHold: number; newBadges: string[] } | null>(null)
+  const [lastConfig, setLastConfig] = useState<PlankFreeConfig | null>(null)
+  const [restartToken, setRestartToken] = useState(0)
   const prevBadgeCountRef = useRef(gainage.earnedBadges.length)
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export default function GainageFreePage() {
     })
   }
 
-  const handleComplete = (sets: PlankSet[], durationSeconds: number, restSeconds: number, status: 'completed' | 'interrupted') => {
+  const handleComplete = (sets: PlankSet[], durationSeconds: number, restSeconds: number, status: 'completed' | 'interrupted', config: PlankFreeConfig) => {
     recordSession({
       mode: 'free',
       plannedDurationSeconds: sets.reduce((s, x) => s + x.targetSeconds, 0),
@@ -55,7 +57,13 @@ export default function GainageFreePage() {
       status,
     })
     const totalHold = sets.filter(s => s.status === 'completed').reduce((s, x) => s + x.actualSeconds, 0)
+    setLastConfig(config)
     setResult({ totalHold, newBadges: [] })
+  }
+
+  const handleRestart = () => {
+    setRestartToken(t => t + 1)
+    setResult(null)
   }
 
   if (result) {
@@ -76,7 +84,10 @@ export default function GainageFreePage() {
             </div>
           </Card>
         )}
-        <Button size="xl" onClick={() => router.push('/gainage')}>Retour à l&apos;accueil</Button>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button size="xl" variant="secondary" className="bg-emerald-500 text-white border-transparent shadow-lg shadow-emerald-200 hover:bg-emerald-600 active:bg-emerald-700" onClick={handleRestart}>Recommencer cette séance</Button>
+          <Button size="xl" onClick={() => router.push('/gainage')}>Retour à l&apos;accueil</Button>
+        </div>
       </div>
     )
   }
@@ -91,7 +102,10 @@ export default function GainageFreePage() {
       </div>
       <div className="flex-1 flex flex-col pt-2 px-4 pb-8 page-scroll-gutter">
         <FreeSessionRunner
+          key={restartToken}
           baseSettings={gainage.settings}
+          initialConfig={restartToken > 0 ? lastConfig ?? undefined : undefined}
+          autoStart={restartToken > 0}
           onStarted={handleStarted}
           onComplete={handleComplete}
           onCancel={() => router.back()}

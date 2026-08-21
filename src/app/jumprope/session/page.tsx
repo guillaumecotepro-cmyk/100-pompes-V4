@@ -38,6 +38,7 @@ function SessionFlow() {
   const [selectedMethod, setSelectedMethod] = useState<JumpCountingMethod | null>(null)
   const [countingMethod, setCountingMethod] = useState<JumpCountingMethod | null>(null)
   const [lastResult, setLastResult] = useState<SessionResult | null>(null)
+  const [restartToken, setRestartToken] = useState(0)
   const previousBestSession = useRef(0)
 
   const jumpBridgeRef = useRef<JumpBridge>(() => {})
@@ -125,6 +126,16 @@ function SessionFlow() {
     router.push('/jumprope')
   }, [camera, router])
 
+  const handleRestart = useCallback(() => {
+    if (!countingMethod) return
+    camera.reset()
+    motion.reset()
+    if (countingMethod === 'camera') void camera.requestPermission()
+    previousBestSession.current = computeBestSessionJumps(jumprope.sessions)
+    setRestartToken(t => t + 1)
+    setPhase('runner')
+  }, [countingMethod, camera, motion, jumprope.sessions])
+
   const back = () => {
     if (phase === 'runner') { handleAbandon(); return }
     router.push('/jumprope/start')
@@ -152,6 +163,8 @@ function SessionFlow() {
                 result={lastResult}
                 isNewRecord={lastResult.totalJumps > previousBestSession.current}
                 weightKg={jumprope.profile?.weightKg ?? null}
+                showRestart={mode === 'free'}
+                onRestart={handleRestart}
               />
             )}
           </div>
@@ -168,6 +181,7 @@ function SessionFlow() {
       <div className="app-content-page flex flex-col px-4 pt-6" style={cameraLive ? { background: 'transparent' } : undefined}>
         <div className="relative z-10 flex-1 flex flex-col">
           <JumpRopeSessionRunner
+            key={restartToken}
             mode={mode}
             blocks={blocks}
             countingMethod={countingMethod}
@@ -187,7 +201,7 @@ function SessionFlow() {
   )
 }
 
-function SummaryScreen({ result, isNewRecord, weightKg }: { result: SessionResult; isNewRecord: boolean; weightKg: number | null }) {
+function SummaryScreen({ result, isNewRecord, weightKg, showRestart, onRestart }: { result: SessionResult; isNewRecord: boolean; weightKg: number | null; showRestart: boolean; onRestart: () => void }) {
   const router = useRouter()
   const calories = estimateCalories(result.activeDurationSeconds, result.avgCadence, weightKg)
 
@@ -232,6 +246,9 @@ function SummaryScreen({ result, isNewRecord, weightKg }: { result: SessionResul
         </Card>
       )}
 
+      {showRestart && (
+        <Button size="xl" fullWidth variant="secondary" className="bg-emerald-500 text-white border-transparent shadow-lg shadow-emerald-200 hover:bg-emerald-600 active:bg-emerald-700" onClick={onRestart}>Recommencer cette séance</Button>
+      )}
       <Button size="xl" fullWidth onClick={() => router.push('/jumprope')}>Retour à l&apos;accueil</Button>
     </div>
   )

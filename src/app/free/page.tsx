@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
-import { PompesFreeSessionRunner } from '@/components/PompesFreeSessionRunner'
+import { PompesFreeConfig, PompesFreeSessionRunner } from '@/components/PompesFreeSessionRunner'
 import { useAppData } from '@/hooks/useWorkoutProgram'
 import { ALL_BADGES } from '@/lib/programGenerator'
 import { PompesFreeMode, PompesFreeSet } from '@/types'
@@ -13,6 +13,8 @@ export default function PompesFreeSessionPage() {
   const router = useRouter()
   const { hydrated, data, saveFreeSession } = useAppData()
   const [result, setResult] = useState<{ totalReps: number; newBadges: string[] } | null>(null)
+  const [lastConfig, setLastConfig] = useState<PompesFreeConfig | null>(null)
+  const [restartToken, setRestartToken] = useState(0)
   const prevBadgeCountRef = useRef(data.earnedBadges.length)
 
   useEffect(() => {
@@ -29,10 +31,16 @@ export default function PompesFreeSessionPage() {
     </div>
   )
 
-  const handleComplete = (mode: PompesFreeMode, restSeconds: number, sets: PompesFreeSet[], status: 'completed' | 'interrupted') => {
+  const handleComplete = (mode: PompesFreeMode, restSeconds: number, sets: PompesFreeSet[], status: 'completed' | 'interrupted', config: PompesFreeConfig) => {
     saveFreeSession({ mode, restSeconds, sets, status })
     const totalReps = sets.filter(s => s.status === 'completed').reduce((s, x) => s + x.actualReps, 0)
+    setLastConfig(config)
     setResult({ totalReps, newBadges: [] })
+  }
+
+  const handleRestart = () => {
+    setRestartToken(t => t + 1)
+    setResult(null)
   }
 
   if (result) {
@@ -53,7 +61,10 @@ export default function PompesFreeSessionPage() {
             </div>
           </Card>
         )}
-        <Button size="xl" onClick={() => router.push('/dashboard')}>Retour à l&apos;accueil</Button>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button size="xl" variant="secondary" className="bg-emerald-500 text-white border-transparent shadow-lg shadow-emerald-200 hover:bg-emerald-600 active:bg-emerald-700" onClick={handleRestart}>Recommencer cette séance</Button>
+          <Button size="xl" onClick={() => router.push('/dashboard')}>Retour à l&apos;accueil</Button>
+        </div>
       </div>
     )
   }
@@ -68,8 +79,11 @@ export default function PompesFreeSessionPage() {
       </div>
       <div className="flex-1 flex flex-col pt-2 px-4 pb-8 page-scroll-gutter">
         <PompesFreeSessionRunner
+          key={restartToken}
           baseSettings={data.pompesAudioSettings}
           personalBest={data.stats.bestSingleSet}
+          initialConfig={restartToken > 0 ? lastConfig ?? undefined : undefined}
+          autoStart={restartToken > 0}
           onStarted={() => {}}
           onComplete={handleComplete}
           onCancel={() => router.back()}
